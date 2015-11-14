@@ -37,7 +37,7 @@ module V1
       end
 
       def method_missing(m, **args, &block)
-        @hosted_zone.send(m)
+        @load_balancer.send(m)
       end
     end
   end

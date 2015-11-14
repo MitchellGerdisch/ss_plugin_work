@@ -38,7 +38,7 @@ module V1
         list_lbs_response = elb.describe_load_balancers
 
         list_lbs_response.load_balancer_descriptions.each do |load_balancer|
-          zone = V1::Models::LoadBalancer.new(native_zone)
+#          zone = V1::Models::LoadBalancer.new(native_zone)
           load_balancer_names << load_balancer.load_balancer_name
         end
 

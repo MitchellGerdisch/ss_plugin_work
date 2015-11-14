@@ -11,11 +11,11 @@ module V1
         attribute :href, String
         attribute :name, String
         attribute :caller_reference, String
-        attribute :config do
-          attribute :comment, String
-          attribute :private_zone, String
-        end
-        attribute :resource_record_set_count, Integer
+#        attribute :config do
+#          attribute :comment, String
+#          attribute :private_zone, String
+#        end
+#        attribute :resource_record_set_count, Integer
         attribute :links, Attributor::Collection.of(Hash)
       end
 
