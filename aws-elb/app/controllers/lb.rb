@@ -34,12 +34,15 @@ module V1
       elb = V1::Helpers::Aws.get_elb_client
 
       begin
-        load_balancer_names = []
+        load_balancers = []
         list_lbs_response = elb.describe_load_balancers
 
         list_lbs_response.load_balancer_descriptions.each do |load_balancer|
 #          zone = V1::Models::LoadBalancer.new(native_zone)
-          load_balancer_names << load_balancer.load_balancer_name
+          load_balancers << { 
+            "load_balancer_name": load_balancer.load_balancer_name,
+            "load_balancer_dns": load_balancer.dns_name
+          }
         end
 
         response = Praxis::Responses::Ok.new()
