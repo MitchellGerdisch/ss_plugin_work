@@ -55,22 +55,25 @@ module V1
       response
     end
     
-    def create(**params)
+    def create(name:, lb_listener:, instance_listener:, **params)
       elb = V1::Helpers::Aws.get_elb_client
+      
+      lb_params = {
+        name: name,
+        listeners: [
+          {
+            protocol: lb_listener.protocol,
+            load_balancer_port: lb_listener.port,
+            instance_protocol: instance_listener.protocol,
+            instance_port: instance_listener.port
+          }
+        ]
+      }
 
       begin
         load_balancers = []
-        list_lbs_response = elb.describe_load_balancers
-
-        list_lbs_response.load_balancer_descriptions.each do |load_balancer|
-          load_balancers << { 
-            "load_balancer_name": load_balancer.load_balancer_name,
-            "load_balancer_dns": load_balancer.dns_name
-          }
-        end
-
-        response = Praxis::Responses::Ok.new()
-        response.body = JSON.pretty_generate(load_balancers)
+        create_lb_response = elb.create_load_balancer(lb_params)
+        response.body = JSON.pretty_generate(create_lb_response)
         response.headers['Content-Type'] = V1::MediaTypes::LoadBalancer.identifier+';type=collection'
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()

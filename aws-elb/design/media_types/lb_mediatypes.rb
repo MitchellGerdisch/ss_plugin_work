@@ -14,12 +14,12 @@ module V1
         attribute :subnets, Attributor::Collection.of(String)
         attribute :secgroups, Attributor::Collection.of(String)
         attribute :lb_listener do
-          attribute :lb_protocol, String
-          attribute :lb_port, String
+          attribute :protocol, String
+          attribute :port, String
         end
         attribute :instance_listener do
-          attribute :instance_protocol, String
-          attribute :instance_port, String
+          attribute :protocol, String
+          attribute :port, String
         end
         attribute :stickiness do
           attribute :stickiness_type, String, values: ['disabled','lb_cookie', 'app_cookie']
