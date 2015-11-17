@@ -5,7 +5,7 @@ module V1
 
       media_type V1::MediaTypes::LoadBalancer
       version '1.0'
-      prefix '/load_balancer'
+      prefix '/load_balancers'
       trait :authorized
 
       action :index do
