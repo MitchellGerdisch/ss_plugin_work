@@ -87,6 +87,27 @@ module V1
 
       response
     end
+    
+    def delete(id:, **params)
+      app = Praxis::Application.instance
+      
+      elb = V1::Helpers::Aws.get_elb_client
+      
+      lb_params = {
+        load_balancer_name: id,
+      }
+
+      begin
+        elb_response = elb.delete_load_balancer(lb_params)        
+        response = Praxis::Responses::Ok.new()
+        response.headers['Content-Type'] = V1::MediaTypes::LoadBalancer.identifier+';type=collection'
+      rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+        response = Praxis::Responses::BadRequest.new()
+        response.body = { error: e.inspect }
+      end
+
+      response
+    end
 
 #    def show(id:, **other_params)
 #      route53 = V1::Helpers::Aws.get_elb_client

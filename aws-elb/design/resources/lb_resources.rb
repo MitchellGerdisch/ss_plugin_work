@@ -44,18 +44,18 @@ module V1
         response :created
         response :bad_request
       end
-#
-#      action :delete do
-#        routing do
-#          delete '/:id'
-#        end
-#        params do
-#          attribute :id, String, required: true
-#        end
-#        response :no_content
-#        response :bad_request
-#        response :not_found
-#      end
+
+      action :delete do
+        routing do
+          delete '/:id'
+        end
+        params do
+          attribute :id, String, required: true
+        end
+        response :no_content
+        response :bad_request
+        response :not_found
+      end
 
     end
   end
