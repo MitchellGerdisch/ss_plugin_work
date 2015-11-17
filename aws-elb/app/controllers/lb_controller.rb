@@ -76,7 +76,8 @@ module V1
       begin
         create_lb_response = elb.create_load_balancer(lb_params)
         app.logger.info("lb create response: "+create_lb_response.dns_name)
-
+        
+        response = Praxis::Responses::Ok.new()
         response.body = create_lb_response
         response.headers['Content-Type'] = V1::MediaTypes::LoadBalancer.identifier+';type=collection'
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
