@@ -9,10 +9,10 @@ module V1
         attribute :id, String
         attribute :href, String
         attribute :name, String
-        attribute :availability_zones, Attributor::Collection.of(String)
+#        attribute :availability_zones, Attributor::Collection.of(String)
         attribute :vpc, String
-        attribute :subnets, Attributor::Collection.of(String)
-        attribute :secgroups, Attributor::Collection.of(String)
+#        attribute :subnets, Attributor::Collection.of(String)
+#        attribute :secgroups, Attributor::Collection.of(String)
         attribute :lb_listener do
           attribute :lb_protocol, String
           attribute :lb_port, String
