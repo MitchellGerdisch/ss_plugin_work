@@ -48,6 +48,8 @@ module V1
         ],
         availability_zones: request.payload.availability_zones   # hard-coding this for now. later need to choose between az and subnets
       }
+      app.logger.info("lb_params: "+lb_params.to_s)
+
 
       begin
         create_lb_response = elb.create_load_balancer(lb_params)
@@ -55,7 +57,7 @@ module V1
        
         resp_body = {}
         resp_body["lb_dns_name"] = create_lb_response["dns_name"]
-        resp_body["href"] = "/elb/load_balancers/" + lb_params["load_balancer_name"].to_s
+        resp_body["href"] = "/elb/load_balancers/" + request.payload.name
 
         response = Praxis::Responses::Ok.new()
         response.headers['Content-Type'] = 'application/json'
