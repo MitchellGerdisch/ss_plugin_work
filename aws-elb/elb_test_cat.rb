@@ -69,6 +69,8 @@ define provision_elb(@raw_elb) return @elb do
     instance_listener: {protocol: @raw_elb.instance_listener_protocol, port: @raw_elb.instance_listener_port},
     availability_zones: @raw_elb.availability_zones
   }) # Calls .create on the API resource
+  
+  @elb = to_object($elb)
 end
 
 define delete_elb(@elb) do

@@ -52,10 +52,13 @@ module V1
       begin
         create_lb_response = elb.create_load_balancer(lb_params)
         app.logger.info("lb create response: "+create_lb_response.dns_name)
-        
+       
+        resp["lb_dns_name"] = create_lb_response.dns_name
+        resp["href"] = "/elb/load_balancers/"+lb_params.load_balancer_name
+
         response = Praxis::Responses::Ok.new()
         response.headers['Content-Type'] = 'application/json'
-        response.body = JSON.pretty_generate({"lb_dns_name":create_lb_response.dns_name})
+        response.body = resp
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
