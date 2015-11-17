@@ -8,7 +8,7 @@ long_description "Create/Delete/List AWS ELBs via an SS Plugin Praxis App server
 # Resources
 #########
 
-resource "elb", type: "elb.lb" do
+resource "elb", type: "elb.load_balancer" do
   name                  "mitch-elb-cat-1"
   lb_listener_protocol  "HTTP"
   lb_listener_port      5555
@@ -23,7 +23,7 @@ end
 namespace "elb" do
   service do
     host "184.73.90.169:8888"        # HTTP endpoint presenting an API defined by self-service to act on resources
-    path ""                                             # path prefix for all resources, RightScale account_id substituted in for multi-tenancy
+    path "/elb"           # path prefix for all resources, RightScale account_id substituted in for multi-tenancy
     headers do {
       "X-Api-Version" => "1.0",
       "X-Api-Shared-Secret" => "12345"  # Shared secret set up on the Praxis App server providing the ELB plugin service
@@ -63,7 +63,7 @@ end
 
 # Define the RCL definitions to create and destroy the resource
 define provision_elb(@raw_elb) return @elb do
-  @elb = elb.lb.create({
+  @elb = elb.load_balancer.create({
     name: @raw_elb.name,
     lb_listener: {protocol: @raw_elb.lb_listener_protocol, port: @raw_elb.lb_listener_port},
     instance_listener: {protocol: @raw_elb.instance_listener_protocol, port: @raw_elb.instance_listener_port},
