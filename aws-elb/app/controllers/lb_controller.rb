@@ -38,7 +38,6 @@ module V1
         list_lbs_response = elb.describe_load_balancers
 
         list_lbs_response.load_balancer_descriptions.each do |load_balancer|
-#          zone = V1::Models::LoadBalancer.new(native_zone)
           load_balancers << { 
             "load_balancer_name": load_balancer.load_balancer_name,
             "load_balancer_dns": load_balancer.dns_name
@@ -47,7 +46,7 @@ module V1
 
         response = Praxis::Responses::Ok.new()
         response.body = JSON.pretty_generate(load_balancers)
-#        response.headers['Content-Type'] = V1::MediaTypes::LoadBalancer.identifier+';type=collection'
+        response.headers['Content-Type'] = V1::MediaTypes::LoadBalancer.identifier+';type=collection'
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
