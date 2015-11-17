@@ -78,7 +78,7 @@ module V1
         app.logger.info("lb create response: "+create_lb_response.dns_name)
         
         response = Praxis::Responses::Ok.new()
-        response.body = create_lb_response
+        response.body = JSON.pretty_generate(create_lb_response.dns_name)
         response.headers['Content-Type'] = V1::MediaTypes::LoadBalancer.identifier+';type=collection'
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
