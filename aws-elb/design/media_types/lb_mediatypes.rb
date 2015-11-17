@@ -2,8 +2,7 @@ module V1
   module MediaTypes
     class LoadBalancer < Praxis::MediaType
 
-      identifier 'application/vnd.rightscale.load_balancer+json'
-      @@kind = 'elb#load_balancer'
+      identifier 'application/json'
 
       attributes do
         attribute :id, String

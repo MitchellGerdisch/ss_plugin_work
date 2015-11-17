@@ -55,17 +55,17 @@ module V1
       response
     end
     
-    def create(name:, lb_listener:, instance_listener:, **params)
+    def create(**params)
       elb = V1::Helpers::Aws.get_elb_client
       
       lb_params = {
-        name: name,
+        name: request.payload.name,
         listeners: [
           {
-            protocol: lb_listener.protocol,
-            load_balancer_port: lb_listener.port,
-            instance_protocol: instance_listener.protocol,
-            instance_port: instance_listener.port
+            protocol: request.payload.lb_listener.protocol,
+            load_balancer_port: request.payload.lb_listener.port,
+            instance_protocol: request.payload.instance_listener.protocol,
+            instance_port: request.payload.instance_listener.port
           }
         ]
       }
