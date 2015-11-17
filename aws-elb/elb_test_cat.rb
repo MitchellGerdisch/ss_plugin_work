@@ -54,7 +54,7 @@ namespace "elb" do
         required true
       end
       field "availability_zones" do                               
-        type "string"
+        type "array"
         required true
       end
     end

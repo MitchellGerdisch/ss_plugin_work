@@ -54,8 +54,8 @@ module V1
         app.logger.info("lb create response: "+create_lb_response.dns_name)
         
         response = Praxis::Responses::Ok.new()
+        response.headers['Content-Type'] = 'application/json'
         response.body = JSON.pretty_generate({"lb_dns_name":create_lb_response.dns_name})
-        response.headers['Content-Type'] = V1::MediaTypes::LoadBalancer.identifier+';type=collection'
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
