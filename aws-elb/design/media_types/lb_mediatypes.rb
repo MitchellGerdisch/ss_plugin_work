@@ -9,10 +9,10 @@ module V1
         attribute :id, String
         attribute :href, String
         attribute :name, String
-        attribute :availability_zones, String # Currently keeping it simple as a single String. Need to support a list AZs
+        attribute :availability_zones, Attributor::Collection.of(String) 
         attribute :vpc, String
-        attribute :subnets, String # Keeping it simple for now. Need to support a list of subnets
-        attribute :secgroups, String # Keeping it simple for now. Need to support a list of security groups
+        attribute :subnets, Attributor::Collection.of(String)
+        attribute :secgroups, Attributor::Collection.of(String)
         attribute :lb_listener do
           attribute :lb_protocol, String
           attribute :lb_port, String
@@ -34,7 +34,7 @@ module V1
         attribute :href
         attribute :name
         attribute :vpc
-        attribute :subnet
+        attribute :subnets
         attribute :secgroups
         attribute :lb_listener
         attribute :instance_listener
