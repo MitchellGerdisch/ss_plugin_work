@@ -54,8 +54,8 @@ module V1
         app.logger.info("lb create response: "+create_lb_response["dns_name"])
        
         resp_body = {}
-        resp_body["lb_dns_name"] = create_lb_response.dns_name
-        resp_body["href"] = "/elb/load_balancers/"+lb_params.load_balancer_name
+        resp_body["lb_dns_name"] = create_lb_response["dns_name"]
+        resp_body["href"] = "/elb/load_balancers/"+lb_params["load_balancer_name"]
 
         response = Praxis::Responses::Ok.new()
         response.headers['Content-Type'] = 'application/json'
