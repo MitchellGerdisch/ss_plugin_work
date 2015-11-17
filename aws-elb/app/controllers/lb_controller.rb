@@ -67,7 +67,7 @@ module V1
             instance_protocol: request.payload.instance_listener.protocol,
             instance_port: request.payload.instance_listener.port
           }
-        ]
+        ],
         availability_zones: request.payload.availability_zones   # hard-coding this for now. later need to choose between az and subnets
       }
 
