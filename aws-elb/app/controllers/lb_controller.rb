@@ -1,4 +1,4 @@
-require 'securerandom'
+require 'logger'
 
 module V1
   class LoadBalancer
@@ -56,6 +56,8 @@ module V1
     end
     
     def create(**params)
+      app = Praxis::Application.instance
+      
       elb = V1::Helpers::Aws.get_elb_client
       
       lb_params = {
@@ -72,9 +74,10 @@ module V1
       }
 
       begin
-        load_balancers = []
         create_lb_response = elb.create_load_balancer(lb_params)
-        response.body = JSON.pretty_generate(create_lb_response)
+        app.logger.info("lb create response:"+create_lb_response)
+
+        response.body = create_lb_response
         response.headers['Content-Type'] = V1::MediaTypes::LoadBalancer.identifier+';type=collection'
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
