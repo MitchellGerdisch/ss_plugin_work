@@ -46,7 +46,7 @@ module V1
         end
 
         response = Praxis::Responses::Ok.new()
-        response.body = JSON.pretty_generate(load_balancer_names)
+        response.body = JSON.pretty_generate(load_balancers)
 #        response.headers['Content-Type'] = V1::MediaTypes::LoadBalancer.identifier+';type=collection'
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
