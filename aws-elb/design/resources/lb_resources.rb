@@ -27,16 +27,23 @@ module V1
 #        response :bad_request
 #      end
 #
-#      action :create do
-#        routing do
-#          post ''
-#        end
-#        payload do
-#          attribute :name, String, required: true
-#        end
-#        response :created
-#        response :bad_request
-#      end
+      action :create do
+        routing do
+          post ''
+        end
+        payload do
+          attribute :name, required: true
+          attribute :lb_listener, required: true
+          attribute :instance_listener, required: true
+          attribute :stickiness
+          attribute :availability_zones
+          attribute :vpc
+          attribute :subnets
+          attribute :secgroups
+        end
+        response :created
+        response :bad_request
+      end
 #
 #      action :delete do
 #        routing do

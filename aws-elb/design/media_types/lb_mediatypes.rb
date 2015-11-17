@@ -6,28 +6,39 @@ module V1
       @@kind = 'elb#load_balancer'
 
       attributes do
-        attribute :kind, String
         attribute :id, String
         attribute :href, String
         attribute :name, String
-        attribute :caller_reference, String
-#        attribute :config do
-#          attribute :comment, String
-#          attribute :private_zone, String
-#        end
-#        attribute :resource_record_set_count, Integer
-        attribute :links, Attributor::Collection.of(Hash)
+        attribute :availability_zones, Praxis::Collection.of(String)
+        attribute :vpc, String
+        attribute :subnets, Praxis::Collection.of(String)
+        attribute :secgroups, Praxis::Collection.of(String)
+        attribute :lb_listener do
+          attribute :lb_protocol, String
+          attribute :lb_port, String
+        end
+        attribute :instance_listener do
+          attribute :instance_protocol, String
+          attribute :instance_port, String
+        end
+        attribute :stickiness do
+          attribute :stickiness_type, String, values: ['disabled','lb_cookie', 'app_cookie']
+          attribute :lb_cookie_expiration, String
+          attribute :app_cookie_name, String
+        end
+
       end
 
       view :default do
-        attribute :kind
         attribute :id
         attribute :href
         attribute :name
-        attribute :caller_reference
-        attribute :config
-        attribute :resource_record_set_count
-        attribute :links
+        attribute :vpc
+        attribute :subnet
+        attribute :secgroups
+        attribute :lb_listener
+        attribute :instance_listener
+        attribute :stickiness
       end
 
       view :link do
