@@ -59,7 +59,7 @@ module V1
       elb = V1::Helpers::Aws.get_elb_client
       
       lb_params = {
-        name: request.payload.name,
+        load_balancer_name: request.payload.name,
         listeners: [
           {
             protocol: request.payload.lb_listener.protocol,
