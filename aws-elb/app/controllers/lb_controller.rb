@@ -86,6 +86,7 @@ module V1
           
         app.logger.info("resp_body: "+resp_body.to_s)
 
+        response = Praxis::Responses::Created.new()
         response.headers['Location'] = resp_body["href"]
         response.headers['Content-Type'] = 'application/json'
         response.body = resp_body
