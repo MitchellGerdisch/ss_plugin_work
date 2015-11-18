@@ -55,12 +55,14 @@ module V1
         response.headers['Content-Type'] = 'application/json'
         response.body = resp_body
         app.logger.info("success during show - response body: "+response.body.to_s)
-      rescue  Aws::ElasticLoadBalancing::Errors::LoadBalancerNotFound,
-              Aws::ElasticLoadBalancing::Errors::AccessPointNotFoundException,
+      rescue  Aws::ElasticLoadBalancing::Errors::LoadBalancerNotFound => e
+        response = Praxis::Responses::NotFound.new()
+        app.logger.info("elb not found during show: "+e.inspect.to_s)
+      rescue  Aws::ElasticLoadBalancing::Errors::AccessPointNotFoundException,
               Aws::ElasticLoadBalancing::Errors::InvalidEndPointException => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
-        app.logger.info("error during show - response body:: "+response.body.to_s)
+        app.logger.info("error during show - response body: "+response.body.to_s)
       end
 
       response
