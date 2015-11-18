@@ -70,6 +70,14 @@ define provision_elb(@raw_elb) return @elb do
     availability_zones: @raw_elb.availability_zones
   }) # Calls .create on the API resource
   
+#rs.audit_entries.create(
+#    notify: "None",
+#    audit_entry: {
+#      auditee_href: @@deployment,
+#      summary: "$elb output",
+#      detail: to_s(@elb)
+#    }
+#  )
 end
 
 define delete_elb(@elb) do
