@@ -70,7 +70,6 @@ define provision_elb(@raw_elb) return @elb do
     availability_zones: @raw_elb.availability_zones
   }) # Calls .create on the API resource
   
-  @elb = to_object($elb)
 end
 
 define delete_elb(@elb) do

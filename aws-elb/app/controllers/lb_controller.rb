@@ -60,6 +60,8 @@ module V1
       
       elb = V1::Helpers::Aws.get_elb_client
       
+      response = Praxis::Responses::Created.new()
+      
       lb_params = {
         load_balancer_name: request.payload.name,
         listeners: [
@@ -85,8 +87,6 @@ module V1
           
         app.logger.info("resp_body: "+resp_body.to_s)
 
-
-        response = Praxis::Responses::Created.new()
         response.headers['Content-Type'] = 'application/json'
         response.headers['Location'] = resp_body["href"]
         response.body = resp_body
