@@ -43,7 +43,7 @@ module V1
       begin
         elb_response = elb.describe_load_balancers(lb_params)        
         response = Praxis::Responses::Ok.new()
-        response.body = elb_response
+        response.body = elb_response.load_balancer_descriptions[0]
         response.headers['Content-Type'] = 'application/json'
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
