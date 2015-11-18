@@ -22,7 +22,7 @@ module V1
 
         response = Praxis::Responses::Ok.new()
         response.body = JSON.pretty_generate(load_balancers)
-        response.headers['Content-Type'] = V1::MediaTypes::LoadBalancer.identifier+';type=collection'
+        response.headers['Content-Type'] = 'application/json'
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
@@ -122,8 +122,7 @@ module V1
 
       begin
         elb_response = elb.delete_load_balancer(lb_params)        
-        response = Praxis::Responses::Ok.new()
-        response.headers['Content-Type'] = V1::MediaTypes::LoadBalancer.identifier+';type=collection'
+        response = Praxis::Responses::NoContent.new()
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }

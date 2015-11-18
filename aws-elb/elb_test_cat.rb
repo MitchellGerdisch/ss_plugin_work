@@ -81,7 +81,7 @@ define provision_elb(@raw_elb) return @elb do
 end
 
 define delete_elb(@elb) do
-  delete(@elb) # Calls .delete on the API resource
+  @elb.destroy() # Calls .delete on the API resource
 end
 
 #########
