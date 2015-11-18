@@ -31,6 +31,28 @@ module V1
       response
     end
     
+    def show(id:, **params)
+      app = Praxis::Application.instance
+      
+      elb = V1::Helpers::Aws.get_elb_client
+      
+      lb_params = {
+        load_balancer_names: [id],
+      }
+
+      begin
+        elb_response = elb.describe_load_balancers(lb_params)        
+        response = Praxis::Responses::Ok.new()
+        response.body = elb_response
+        response.headers['Content-Type'] = 'application/json'
+      rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+        response = Praxis::Responses::BadRequest.new()
+        response.body = { error: e.inspect }
+      end
+
+      response
+    end
+    
     def create(**params)
       app = Praxis::Application.instance
       

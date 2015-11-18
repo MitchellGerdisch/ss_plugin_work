@@ -15,18 +15,18 @@ module V1
         response :ok
       end
 
-#      action :show do
-#        routing do
-#          get '/:id'
-#        end
-#        params do
-#          attribute :id, String, required: true
-#        end
-#        response :ok
-#        response :not_found
-#        response :bad_request
-#      end
-#
+      action :show do
+        routing do
+          get '/:id'
+        end
+        params do
+          attribute :name, required: true
+        end
+        response :ok
+        response :not_found
+        response :bad_request
+      end
+
       action :create do
         routing do
           post ''
