@@ -45,7 +45,7 @@ module V1
         lb_desc = elb_response.load_balancer_descriptions[0]
               
         response = Praxis::Responses::Ok.new()
-        response.body = { "load_balancer_name": lb_desc["load_balancer_name"], "dns_name": lb_desc["dns_name"] }
+        response.body = { "load_balancer_name": lb_desc["load_balancer_name"], "lb_dns_name": lb_desc["dns_name"] }
         response.headers['Content-Type'] = 'application/json'
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
@@ -59,9 +59,7 @@ module V1
       app = Praxis::Application.instance
       
       elb = V1::Helpers::Aws.get_elb_client
-      
-      self.response = Praxis::Responses::Created.new()
-      
+            
       lb_params = {
         load_balancer_name: request.payload.name,
         listeners: [
@@ -83,19 +81,26 @@ module V1
        
         resp_body = {}
         resp_body["lb_dns_name"] = create_lb_response["dns_name"]
+        resp_body["load_balancer_name"] = request.payload.name
         resp_body["href"] = "/elb/load_balancers/" + request.payload.name
           
         app.logger.info("resp_body: "+resp_body.to_s)
 
-        response.headers['Content-Type'] = 'application/json'
         response.headers['Location'] = resp_body["href"]
+        response.headers['Content-Type'] = 'application/json'
         response.body = resp_body
+        app.logger.info("success case - response header: "+response.headers.to_s)
+        app.logger.info("success case - response body: "+response.body.to_s)
+
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
-        response = Praxis::Responses::BadRequest.new()
+        self.response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
+        app.logger.info("error response body:"+response.body.to_s)
       end
       
-      app.logger.info("response: "+response.to_s)
+        
+      app.logger.info("departing response header: "+response.headers.to_s)
+      app.logger.info("departing response body: "+response.body.to_s)
 
       response
     end
