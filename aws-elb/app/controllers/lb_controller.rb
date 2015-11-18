@@ -106,7 +106,8 @@ module V1
 #        app.logger.info("success case - response header: "+response.headers.to_s)
 #        app.logger.info("success case - response body: "+response.body.to_s)
 
-      rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+      rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
+             Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         self.response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
         app.logger.info("error response body:"+response.body.to_s)

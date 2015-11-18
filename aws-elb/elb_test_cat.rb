@@ -89,7 +89,7 @@ namespace "elb" do
         required true
       end
       field "lb_listener_port" do                               
-        type "number"
+        type "string"
         required true
       end
       field "instance_listener_protocol" do                               
@@ -97,7 +97,7 @@ namespace "elb" do
         required true
       end
       field "instance_listener_port" do                               
-        type "number"
+        type "string"
         required true
       end
       field "availability_zones" do                               
