@@ -20,7 +20,7 @@ module V1
           get '/:id'
         end
         params do
-          attribute :name, required: true
+          attribute :id, required: true
         end
         response :ok
         response :not_found
