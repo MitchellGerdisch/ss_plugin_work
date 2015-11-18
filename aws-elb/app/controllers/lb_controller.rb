@@ -54,15 +54,15 @@ module V1
         response = Praxis::Responses::Ok.new()
         response.headers['Content-Type'] = 'application/json'
         response.body = resp_body
-        app.logger.info("success during show - response body: "+response.body.to_s)
+#        app.logger.info("success during show - response body: "+response.body.to_s)
       rescue  Aws::ElasticLoadBalancing::Errors::LoadBalancerNotFound => e
         response = Praxis::Responses::NotFound.new()
-        app.logger.info("elb not found during show: "+e.inspect.to_s)
+#        app.logger.info("elb not found during show: "+e.inspect.to_s)
       rescue  Aws::ElasticLoadBalancing::Errors::AccessPointNotFoundException,
               Aws::ElasticLoadBalancing::Errors::InvalidEndPointException => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
-        app.logger.info("error during show - response body: "+response.body.to_s)
+#        app.logger.info("error during show - response body: "+response.body.to_s)
       end
 
       response
@@ -85,19 +85,19 @@ module V1
         ],
         availability_zones: request.payload.availability_zones   # hard-coding this for now. later need to choose between az and subnets
       }
-      app.logger.info("lb_params: "+lb_params.to_s)
+#      app.logger.info("lb_params: "+lb_params.to_s)
 
 
       begin
         create_lb_response = elb.create_load_balancer(lb_params)
-        app.logger.info("lb create response: "+create_lb_response["dns_name"].to_s)
+#        app.logger.info("lb create response: "+create_lb_response["dns_name"].to_s)
        
         resp_body = {}
         resp_body["lb_dns_name"] = create_lb_response["dns_name"]
         resp_body["load_balancer_name"] = request.payload.name
         resp_body["href"] = "/elb/load_balancers/" + request.payload.name
           
-        app.logger.info("resp_body: "+resp_body.to_s)
+#        app.logger.info("resp_body: "+resp_body.to_s)
 
         response = Praxis::Responses::Created.new()
         response.headers['Location'] = resp_body["href"]
@@ -110,12 +110,12 @@ module V1
              Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         self.response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
-        app.logger.info("error response body:"+response.body.to_s)
+#        app.logger.info("error response body:"+response.body.to_s)
       end
       
         
-      app.logger.info("departing response header: "+response.headers.to_s)
-      app.logger.info("departing response body: "+response.body.to_s)
+#      app.logger.info("departing response header: "+response.headers.to_s)
+#      app.logger.info("departing response body: "+response.body.to_s)
 
       response
     end

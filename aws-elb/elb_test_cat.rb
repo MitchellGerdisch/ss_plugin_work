@@ -11,6 +11,8 @@ parameter "elb_name" do
   type "string"
   label "ELB Name"
   category "ELB"
+  constraint_description "The ELB name must be unique within your set of load balancers for the region, must have a maximum of 32 characters, must contain only alphanumeric characters or hyphens, and cannot begin or end with a hyphen."
+  allowed_pattern "(?=[a-zA-Z0-9\-]{1,32}$)^[a-zA-Z0-9]+(\-[a-zA-Z0-9]+)*$"
 end
 
 parameter "lb_protocol" do
@@ -24,8 +26,10 @@ end
 parameter "lb_port" do
   category "ELB"
   label "Load Balancer Listener Port"
-  type "number"
-  default 80
+  type "string"
+  default "80"
+  constraint_description "ELB listener port is restricted to ports 25, 80, 443, 465, 587, or 1024-65535"
+  allowed_pattern "^(25|80|443|465|587)$|^(102[4-9])$|^(10[3-9][0-9])$|^(1[1-9][0-9][0-9])$|^([2-9][0-9][0-9][0-9])$|^([1-5][0-9][0-9][0-9][0-9])$|^(6[0-4][0-9][0-9][0-9])$|^(65[0-4][0-9][0-9])$|^(655[0-2][0-9])$|^(6553[0-5])$"
 end
 
 parameter "instance_protocol" do
@@ -39,8 +43,8 @@ end
 parameter "instance_port" do
   category "ELB"
   label "Backend Instances' Listening Port"
-  type "number"
-  default 8080
+  type "string"
+  default "8080"
 end
 
 parameter "availability_zones" do
@@ -89,7 +93,7 @@ namespace "elb" do
         required true
       end
       field "lb_listener_port" do                               
-        type "number"
+        type "string"
         required true
       end
       field "instance_listener_protocol" do                               
@@ -97,7 +101,7 @@ namespace "elb" do
         required true
       end
       field "instance_listener_port" do                               
-        type "number"
+        type "string"
         required true
       end
       field "availability_zones" do                               
