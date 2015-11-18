@@ -55,11 +55,11 @@ module V1
         response.headers['Content-Type'] = 'application/json'
         response.body = resp_body
         app.logger.info("success during show - response body: "+response.body.to_s)
-      rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+      rescue  Aws::ElasticLoadBalancing::Errors::AccessPointNotFoundException,
+              Aws::ElasticLoadBalancing::Errors::InvalidEndPointException => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
         app.logger.info("error during show - response body:: "+response.body.to_s)
-
       end
 
       response
