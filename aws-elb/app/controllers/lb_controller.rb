@@ -60,7 +60,7 @@ module V1
       
       elb = V1::Helpers::Aws.get_elb_client
       
-      response = Praxis::Responses::Created.new()
+      self.response = Praxis::Responses::Created.new()
       
       lb_params = {
         load_balancer_name: request.payload.name,
