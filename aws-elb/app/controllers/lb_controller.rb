@@ -120,9 +120,10 @@ module V1
         load_balancer_name: id,
       }
 
+      response = Praxis::Responses::NoContent.new()
+
       begin
         elb_response = elb.delete_load_balancer(lb_params)        
-        response = Praxis::Responses::NoContent.new()
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }

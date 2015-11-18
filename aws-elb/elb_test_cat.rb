@@ -5,15 +5,61 @@ short_description "Allows you to create and manage AWS Elastic Load Balancers li
 long_description "Create/Delete/List AWS ELBs via an SS Plugin Praxis App server"
 
 #########
+# Inputs
+#########
+parameter "elb_name" do
+  type "string"
+  label "ELB Name"
+  category "ELB"
+end
+
+parameter "lb_protocol" do
+  category "ELB"
+  label "Load Balancer Listener Protocol"
+  type "string"
+  allowed_values "HTTP", "HTTPS", "TCP", "SSL"
+  default_value "HTTP"
+end
+
+parameter "lb_port" do
+  category "ELB"
+  label "Load Balancer Listener Port"
+  type "number"
+  default "80"
+end
+
+parameter "instance_protocol" do
+  category "ELB"
+  label "Instance Protocol"
+  type "string"
+  allowed_values "HTTP", "HTTPS", "TCP", "SSL"
+end
+
+parameter "instance_port" do
+  category "ELB"
+  label "Instances Port"
+  type "number"
+  default "8080"
+end
+
+parameter "availability_zones" do
+  category "ELB"
+  label "Instances Port"
+  type "list"
+  default "us-east-1a"
+end
+
+
+#########
 # Resources
 #########
 
 resource "elb", type: "elb.load_balancer" do
-  name                  "mitch-elb-cat-1"
-  lb_listener_protocol  "HTTP"
-  lb_listener_port      5555
-  instance_listener_protocol  "HTTP"
-  instance_listener_port  6666
+  name                  $elb_name
+  lb_listener_protocol  $lb_protocol
+  lb_listener_port      $lb_port
+  instance_listener_protocol  $instance_protocol
+  instance_listener_port  $instance_port
   availability_zones  "us-east-1a"
 end
 
