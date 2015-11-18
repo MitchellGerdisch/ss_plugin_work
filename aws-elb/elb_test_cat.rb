@@ -58,9 +58,9 @@ end
 resource "elb", type: "elb.load_balancer" do
   name                  $elb_name
   lb_listener_protocol  $lb_protocol
-  lb_listener_port      80
+  lb_listener_port      $lb_port
   instance_listener_protocol  $instance_protocol
-  instance_listener_port  8080
+  instance_listener_port  $instance_port
   availability_zones  $availability_zones
 end
 
