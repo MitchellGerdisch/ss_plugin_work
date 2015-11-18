@@ -5,6 +5,8 @@ module V1
     include Praxis::Controller
 
     implements V1::ApiResources::LoadBalancer
+    
+    app = Praxis::Application.instance
 
     def index(**params)
       elb = V1::Helpers::Aws.get_elb_client
@@ -52,9 +54,12 @@ module V1
         response = Praxis::Responses::Ok.new()
         response.headers['Content-Type'] = 'application/json'
         response.body = resp_body
+        app.logger.info("success during show - response body: "+response.body.to_s)
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
+        app.logger.info("error during show - response body:: "+response.body.to_s)
+
       end
 
       response

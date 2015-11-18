@@ -18,28 +18,29 @@ parameter "lb_protocol" do
   label "Load Balancer Listener Protocol"
   type "string"
   allowed_values "HTTP", "HTTPS", "TCP", "SSL"
-  default_value "HTTP"
+  default "HTTP"
 end
 
 parameter "lb_port" do
   category "ELB"
   label "Load Balancer Listener Port"
   type "number"
-  default "80"
+  default 80
 end
 
 parameter "instance_protocol" do
   category "ELB"
-  label "Instance Protocol"
+  label "Backend Instances' Listening Protocol"
   type "string"
   allowed_values "HTTP", "HTTPS", "TCP", "SSL"
+  default "HTTP"
 end
 
 parameter "instance_port" do
   category "ELB"
-  label "Instances Port"
+  label "Backend Instances' Listening Port"
   type "number"
-  default "8080"
+  default 8080
 end
 
 parameter "availability_zones" do
@@ -57,10 +58,10 @@ end
 resource "elb", type: "elb.load_balancer" do
   name                  $elb_name
   lb_listener_protocol  $lb_protocol
-  lb_listener_port      $lb_port
+  lb_listener_port      80
   instance_listener_protocol  $instance_protocol
-  instance_listener_port  $instance_port
-  availability_zones  "us-east-1a"
+  instance_listener_port  8080
+  availability_zones  $availability_zones
 end
 
 #########
