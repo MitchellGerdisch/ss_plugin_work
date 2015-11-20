@@ -84,7 +84,7 @@ module V1
         	load_balancer_port: listener["lb_port"],
         	instance_protocol: listener["instance_protocol"],
         	instance_port: listener["instance_port"]
-	}
+        }
         api_lb_listeners << api_lb_listener
       end
             
@@ -125,6 +125,21 @@ module V1
             idle_timeout: request.payload.connection_idle_timeout
           }
         }
+      }
+      
+      # build params for the tags
+      api_tags = []
+      tags_array = request.payload.tags
+      tags_array.each do |tag|
+        api_tag = {
+          key: tag.split(":")[0]
+          value: tag.split(":")[1]
+        }
+        api_tags << api_tag
+      end
+      api_add_tags_params = {
+        load_balancer_name: lb_name,
+        tags: api_tags
       }
 
       begin
@@ -168,6 +183,15 @@ module V1
       begin
         # add other ELB attributes if provided
         attributes_response = elb.modify_load_balancer_attributes(api_modify_lb_attributes_params)
+      rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
+               Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+          self.response = Praxis::Responses::BadRequest.new()
+          response.body = { error: e.inspect }
+      end
+      
+      begin
+        # add tags
+        tagging_response = elb.add_tags(api_add_tags_params)
       rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
                Aws::ElasticLoadBalancing::Errors::InvalidInput => e
           self.response = Praxis::Responses::BadRequest.new()

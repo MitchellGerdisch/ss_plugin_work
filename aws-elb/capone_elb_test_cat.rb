@@ -173,8 +173,12 @@ resource "elb", type: "elb.load_balancer" do
       "instance_port" => "80"
     }
   ] end
-# TODO add tagging stuff
-#  tags  $tags  
+  tags  [
+    join(["ASV:",map($map_config, "CMDBApplicationService", $param_elb_envtype)]),
+    join(["CMDBEnvironment:",map($map_config, "CMDBEnvironment", $param_elb_envtype)]),
+    join(["OwnerContact:",$param_elb_owner]),
+    join(["SNSTopicARN:",map($map_config, "SNSAppNotifyTopic", $param_elb_envtype)])
+    ]
 end
 
 #########
@@ -237,6 +241,9 @@ namespace "elb" do
       field "listeners" do
         type "composite"
         required true
+      end
+      field "tags" do
+        type "array"
       end
     end
   end
@@ -320,6 +327,7 @@ define provision_lb(@raw_elb) return @elb do
     connection_idle_timeout: @raw_elb.connection_idle_timeout,
     cross_zone: @raw_elb.cross_zone,
     scheme: @raw_elb.scheme
+    tags: @raw_elb.tags
   }) # Calls .create on the API resource
   
   rs.audit_entries.create(
