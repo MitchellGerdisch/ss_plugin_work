@@ -3,39 +3,6 @@ module V1
     class LoadBalancer < Praxis::MediaType
 
       identifier 'application/json'
-      
-      resource "elb", type: "elb.load_balancer" do
-        name  join([$elb_appname,"-",$param_elb_envtype,"-web-elb"])
-        subnets  map($map_config, "Subnets", $param_elb_envtype)
-        security_groups map($map_config, "SecurityGroups", $param_elb_envtype)
-        healthcheck_target  "TCP:8080/index.html"
-        healthcheck_interval "30"
-        healthcheck_timeout "5"
-        healthcheck_unhealthy_threshold "5"
-        healthcheck_healthy_threshold "3"
-        connection_draining_timeout "120" # if null then connection_draining_policy is disabled
-        connection_idle_timeout "90"
-        cross_zone  "true"
-        scheme  "internal"
-        listeners do [
-          {
-            "listener_name" => "elb_listener_http8080_http8080",
-            "lb_protocol" => "HTTP",
-            "lb__port" => "8080",
-            "instance_protocol" => "HTTP",
-            "instance_port" => "8080"
-          },
-          {
-            "listener_name" => "elb_listener_http80_http80",
-            "lb_protocol" => "HTTP",
-            "lb__port" => "80",
-            "instance_protocol" => "HTTP",
-            "instance_port" => "80"
-          }
-        ] end
-      # TODO add tagging stuff
-      #  tags  $tags  
-      end
 
       attributes do
         attribute :id, Attributor::String
