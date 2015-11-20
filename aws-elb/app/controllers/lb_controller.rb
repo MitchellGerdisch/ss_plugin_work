@@ -73,33 +73,50 @@ module V1
       
       elb = V1::Helpers::Aws.get_elb_client
       
+      lb_name = request.payload.name
+      
       # transfer the listener specs from the received API to the required format for the AWS ELB call
-      api_listeners = []
+      api_lb_listeners = []
       listeners_hash_array = request.payload.listeners
       listeners_hash_array.each do |listener|
-        api_listener = {
+        api_lb_listener = {
         	protocol: listener["lb_protocol"],
         	load_balancer_port: listener["lb_port"],
         	instance_protocol: listener["instance_protocol"],
         	instance_port: listener["instance_port"]
 	}
-        api_listeners << api_listener
+        api_lb_listeners << api_lb_listener
       end
                   
       api_lb_params = {
-        load_balancer_name: request.payload.name,
+        load_balancer_name: lb_name,
         subnets: request.payload.subnets,
         security_groups: request.payload.secgroups,
-        listeners: api_listeners,
+        listeners: api_lb_listeners,
         scheme: request.payload.scheme,
       }
 #      app.logger.info("api_lb_params: "+api_lb_params.to_s)
+      
+      api_healthcheck_params = {
+        load_balancer_name: lb_name,
+        healthcheck: {
+          target: request.payload.healthcheck.target,
+          interval: request.payload.healthcheck.interval,
+          timeout: request.payload.healthcheck.timeout,
+          unhealthy_threshold: request.payload.healthcheck.unhealthy_threshold,
+          healthy_threshold: request.payload.healthcheck.healthy_threshold
+        }
+      }
 
 
       begin
+        # create the ELB
         create_lb_response = elb.create_load_balancer(api_lb_params)
+  
 #        app.logger.info("lb create response: "+create_lb_response["dns_name"].to_s)
        
+        # Build the response returned from the plugin service.
+        # If there was a problem with calling AWS, it will be replaced by the error response.
         resp_body = {}
         resp_body["lb_dns_name"] = create_lb_response["dns_name"]
         resp_body["load_balancer_name"] = request.payload.name
@@ -121,7 +138,15 @@ module V1
 #        app.logger.info("error response body:"+response.body.to_s)
       end
       
-        
+      begin
+        # add healthcheck properties to the ELB
+        healthcheck_response = elb.configure_health_check(api_healthcheck_params)
+      rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
+             Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+        self.response = Praxis::Responses::BadRequest.new()
+        response.body = { error: e.inspect }
+      end
+       
 #      app.logger.info("departing response header: "+response.headers.to_s)
 #      app.logger.info("departing response body: "+response.body.to_s)
 
