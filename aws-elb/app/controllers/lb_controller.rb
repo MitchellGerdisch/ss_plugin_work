@@ -99,7 +99,7 @@ module V1
       
       api_healthcheck_params = {
         load_balancer_name: lb_name,
-        healthcheck: {
+        health_check: {
           target: request.payload.healthcheck.target,
           interval: request.payload.healthcheck.interval,
           timeout: request.payload.healthcheck.timeout,
