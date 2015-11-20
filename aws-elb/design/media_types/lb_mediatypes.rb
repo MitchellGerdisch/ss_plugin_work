@@ -28,6 +28,7 @@ module V1
           attribute :lb_cookie_expiration, Attributor::String
           attribute :app_cookie_name, Attributor::String
         end
+        attribute :tags, Attributor::Collection.of(String)
 
       end
 
@@ -44,6 +45,7 @@ module V1
         attribute :cross_zone
         attribute :scheme
         attribute :stickiness
+        attribute :tags
       end
 
       view :link do

@@ -42,6 +42,7 @@ module V1
           attribute :stickiness
           attribute :cross_zone
           attribute :scheme
+          attribute :tags
         end
         response :created
         response :bad_request

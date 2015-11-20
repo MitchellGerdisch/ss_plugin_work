@@ -91,6 +91,7 @@ module V1
         subnets: request.payload.subnets,
         security_groups: request.payload.secgroups,
         listeners: api_listeners,
+        scheme: request.payload.scheme,
       }
 #      app.logger.info("api_lb_params: "+api_lb_params.to_s)
 
