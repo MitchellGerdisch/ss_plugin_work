@@ -33,15 +33,13 @@ module V1
         end
         payload do
           attribute :name, required: true
-          attribute :lb_listener, required: true
-          attribute :instance_listener, required: true
-          attribute :stickiness
-          attribute :subnets
-          attribute :secgroups
-          attribute :listeners
+          attribute :listeners, required: true
+          attribute :subnets, required: true
+          attribute :secgroups, required: true
           attribute :healthcheck 
           attribute :connection_draining_timeout
           attribute :connection_idle_timeout
+          attribute :stickiness
           attribute :cross_zone
           attribute :scheme
         end

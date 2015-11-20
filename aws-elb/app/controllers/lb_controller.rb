@@ -77,6 +77,7 @@ module V1
       api_listeners = []
       listeners_hash_array = request.payload.listeners
       listeners_hash_array.each do |listener|
+      app.logger.info("listener: "+listener.to_s)
         api_listener={}
         api_listener["protocol"] = listener["lb_protocol"]
         api_listener["load_balancer_port"] = listener["lb_port"]
