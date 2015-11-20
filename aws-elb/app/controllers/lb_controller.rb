@@ -77,12 +77,12 @@ module V1
       api_listeners = []
       listeners_hash_array = request.payload.listeners
       listeners_hash_array.each do |listener|
-      app.logger.info("listener: "+listener.to_s)
-        api_listener={}
-        api_listener["protocol"] = listener["lb_protocol"]
-        api_listener["load_balancer_port"] = listener["lb_port"]
-        api_listener["instance_protocol"] = listener["instance_protocol"]
-        api_listener["instance_port"] = listener["instance_port"]
+        api_listener = {
+        	protocol: listener["lb_protocol"],
+        	load_balancer_port: listener["lb_port"],
+        	instance_protocol: listener["instance_protocol"],
+        	instance_port: listener["instance_port"]
+	}
         api_listeners << api_listener
       end
                   
@@ -92,7 +92,7 @@ module V1
         security_groups: request.payload.secgroups,
         listeners: api_listeners,
       }
-      app.logger.info("lb_params: "+lb_params.to_s)
+#      app.logger.info("api_lb_params: "+api_lb_params.to_s)
 
 
       begin
