@@ -132,7 +132,7 @@ module V1
       tags_array = request.payload.tags
       tags_array.each do |tag|
         api_tag = {
-          key: tag.split(":")[0]
+          key: tag.split(":")[0],
           value: tag.split(":")[1]
         }
         api_tags << api_tag
