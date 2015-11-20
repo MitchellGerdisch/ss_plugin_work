@@ -72,24 +72,30 @@ module V1
       app = Praxis::Application.instance
       
       elb = V1::Helpers::Aws.get_elb_client
-            
-      lb_params = {
+      
+      # transfer the listener specs from the received API to the required format for the AWS ELB call
+      api_listeners = []
+      listeners_hash_array = request.payload.listeners
+      listeners_hash_array.each do |listener|
+        api_listener={}
+        api_listener["protocol"] = listener["lb_protocol"]
+        api_listener["load_balancer_port"] = listener["lb_port"]
+        api_listener["instance_protocol"] = listener["instance_protocol"]
+        api_listener["instance_port"] = listener["instance_port"]
+        api_listeners << api_listener
+      end
+                  
+      api_lb_params = {
         load_balancer_name: request.payload.name,
-        listeners: [
-          {
-            protocol: request.payload.lb_listener.protocol,
-            load_balancer_port: request.payload.lb_listener.port,
-            instance_protocol: request.payload.instance_listener.protocol,
-            instance_port: request.payload.instance_listener.port
-          }
-        ],
-        availability_zones: request.payload.availability_zones   # hard-coding this for now. later need to choose between az and subnets
+        subnets: request.payload.subnets,
+        security_groups: request.payload.secgroups,
+        listeners: api_listeners,
       }
-#      app.logger.info("lb_params: "+lb_params.to_s)
+      app.logger.info("lb_params: "+lb_params.to_s)
 
 
       begin
-        create_lb_response = elb.create_load_balancer(lb_params)
+        create_lb_response = elb.create_load_balancer(api_lb_params)
 #        app.logger.info("lb create response: "+create_lb_response["dns_name"].to_s)
        
         resp_body = {}

@@ -36,10 +36,14 @@ module V1
           attribute :lb_listener, required: true
           attribute :instance_listener, required: true
           attribute :stickiness
-          attribute :availability_zones
-          attribute :vpc
           attribute :subnets
           attribute :secgroups
+          attribute :listeners
+          attribute :healthcheck 
+          attribute :connection_draining_timeout
+          attribute :connection_idle_timeout
+          attribute :cross_zone
+          attribute :scheme
         end
         response :created
         response :bad_request

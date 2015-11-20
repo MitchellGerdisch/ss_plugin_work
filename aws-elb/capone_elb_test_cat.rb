@@ -68,15 +68,9 @@ mapping "map_config" do {
      "prod"=> "internal"
    },
    "SecurityGroups"=> {
-     "test"=> [
-       "sg-e2cf9086"
-     ],
-     "preprod"=> [
-       "sg-37ce9153"
-     ],
-     "prod"=> [
-       "sg-7fdfb41b"
-     ]
+     "test"=> "sg-e2cf9086",
+     "preprod"=> "sg-37ce9153",
+     "prod"=> "sg-7fdfb41b"
    },
    "SNSAppNotifyTopic"=> {
      "test"=> "arn:aws:sns:us-east-1:084220657940:esa-notify-nonprod",
@@ -89,21 +83,10 @@ mapping "map_config" do {
      "prod"=> "arn:aws:sns:us-east-1:884541871395:Enterprise_Monitoring_SNS_Retailbank"
    },
    "Subnets"=> {
-     "test"=> [
-       "subnet-05b9c75c",
-       "subnet-a9660582"
-     ],
-     "preprod"=> [
-       "subnet-bbb895e2",
-       "subnet-b3aaf998",
-       "subnet-7948420e"
-     ],
-     "prod"=> [
-       "subnet-c82578e3",
-       "subnet-bc3124cb",
-       "subnet-4e517e17"
-     ]
-     }
+     "test"=> "subnet-05b9c75c,subnet-a9660582"
+     "preprod"=> "subnet-bbb895e2,subnet-b3aaf998,subnet-7948420e"
+     "prod"=> "subnet-c82578e3,subnet-bc3124cb,subnet-4e517e17"
+   }
 } end
 
 #########
@@ -208,11 +191,11 @@ namespace "elb" do
         required true
       end
       field "subnets" do                               
-        type "array"
+        type "string"
         required true
       end
       field "security_groups" do                               
-        type "array"
+        type "string"
         required true
       end
       field "healthcheck_target" do                               
@@ -244,6 +227,7 @@ namespace "elb" do
       end
       field "listeners" do
         type "composite"
+        required true
       end
     end
   end
@@ -251,21 +235,21 @@ end
 
 # Define the RCL definitions to create and destroy the resource
 define provision_lb(@raw_elb) return @elb do
-
-#  
-#  @elb = elb.load_balancer.create({
-#    name: @raw_elb.name,
-#    lb_listener: {protocol: @raw_elb.lb_listener_protocol, port: @raw_elb.lb_listener_port},
-#    instance_listener: {protocol: @raw_elb.instance_listener_protocol, port: @raw_elb.instance_listener_port},
-#    availability_zones: @raw_elb.availability_zones
-#  }) # Calls .create on the API resource
   
-rs.audit_entries.create(
+  $listeners = 
+  @elb = elb.load_balancer.create({
+    name: @raw_elb.name,
+    lb_listener: {protocol: @raw_elb.lb_listener_protocol, port: @raw_elb.lb_listener_port},
+    instance_listener: {protocol: @raw_elb.instance_listener_protocol, port: @raw_elb.instance_listener_port},
+    availability_zones: @raw_elb.availability_zones
+  }) # Calls .create on the API resource
+  
+  rs.audit_entries.create(
     notify: "None",
     audit_entry: {
       auditee_href: @@deployment,
       summary: "listener:",
-      detail: to_s(@raw_elb)
+      detail: to_s(@elb)
     }
   )
 end
