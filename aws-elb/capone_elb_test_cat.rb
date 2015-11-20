@@ -25,7 +25,7 @@ parameter "param_elb_appname" do
   type "string"
   label "Application Name"
   description "What app will this resource be for?"
-  default "testapp"
+  default "mitchtest"
 end
 
 parameter "param_elb_envtype" do
@@ -50,8 +50,47 @@ end
 #########
 # Mappings
 #########
+#mapping "map_config" do {
+#  # A straight port of the mapping in the provided CFT
+#  "CMDBApplicationService" => {
+#     "test"=> "ASVEVENTSCHEDULING",
+#     "preprod"=> "ASVEVENTSCHEDULING",
+#     "prod"=> "ASVEVENTSCHEDULING"
+#   },
+#   "CMDBEnvironment"=> {
+#     "test"=> "ENVNPEVENTSCHEDULING",
+#     "preprod"=> "ENVNPEVENTSCHEDULING",
+#     "prod"=> "ENVPREVENTSCHEDULING"
+#   },
+#   "ELBScheme"=> {
+#     "test"=> "internal",
+#     "preprod"=> "internal",
+#     "prod"=> "internal"
+#   },
+#   "SecurityGroups"=> {
+#     "test"=> "sg-e2cf9086",
+#     "preprod"=> "sg-37ce9153",
+#     "prod"=> "sg-7fdfb41b"
+#   },
+#   "SNSAppNotifyTopic"=> {
+#     "test"=> "arn:aws:sns:us-east-1:084220657940:esa-notify-nonprod",
+#     "preprod"=> "arn:aws:sns:us-east-1:084220657940:esa-notify-nonprod",
+#     "prod"=> "arn:aws:sns:us-east-1:884541871395:esa-notify-prod"
+#   },
+#   "SNSOpsNotifyTopic"=> {
+#     "test"=> "arn:aws:sns:us-east-1:084220657940:Enterprise_Monitoring_SNS_Retail",
+#     "preprod"=> "arn:aws:sns:us-east-1:084220657940:Enterprise_Monitoring_SNS_Retail",
+#     "prod"=> "arn:aws:sns:us-east-1:884541871395:Enterprise_Monitoring_SNS_Retailbank"
+#   },
+#   "Subnets"=> {
+#     "test"=> "subnet-05b9c75c,subnet-a9660582",
+#     "preprod"=> "subnet-bbb895e2,subnet-b3aaf998,subnet-7948420e",
+#     "prod"=> "subnet-c82578e3,subnet-bc3124cb,subnet-4e517e17"
+#   }
+#} end
+
+# TEST VERSION
 mapping "map_config" do {
-  # A straight port of the mapping in the provided CFT
   "CMDBApplicationService" => {
      "test"=> "ASVEVENTSCHEDULING",
      "preprod"=> "ASVEVENTSCHEDULING",
@@ -68,9 +107,7 @@ mapping "map_config" do {
      "prod"=> "internal"
    },
    "SecurityGroups"=> {
-     "test"=> "sg-e2cf9086",
-     "preprod"=> "sg-37ce9153",
-     "prod"=> "sg-7fdfb41b"
+     "test"=> "sg-66592b00,sg-0b592b6d",
    },
    "SNSAppNotifyTopic"=> {
      "test"=> "arn:aws:sns:us-east-1:084220657940:esa-notify-nonprod",
@@ -83,9 +120,7 @@ mapping "map_config" do {
      "prod"=> "arn:aws:sns:us-east-1:884541871395:Enterprise_Monitoring_SNS_Retailbank"
    },
    "Subnets"=> {
-     "test"=> "subnet-05b9c75c,subnet-a9660582"
-     "preprod"=> "subnet-bbb895e2,subnet-b3aaf998,subnet-7948420e"
-     "prod"=> "subnet-c82578e3,subnet-bc3124cb,subnet-4e517e17"
+     "test"=> "subnet-e237ce94,subnet-1c564545",
    }
 } end
 
@@ -110,30 +145,30 @@ mapping "map_config" do {
 #end
 
 resource "elb", type: "elb.load_balancer" do
-  name  join([$elb_appname,"-",$param_elb_envtype,"-web-elb"])
+  name  join([$param_elb_appname,"-",$param_elb_envtype,"-web-elb"])
   subnets  map($map_config, "Subnets", $param_elb_envtype)
   security_groups map($map_config, "SecurityGroups", $param_elb_envtype)
-  healthcheck_target  "TCP:8080/index.html"
-  healthcheck_interval "30"
-  healthcheck_timeout "5"
-  healthcheck_unhealthy_threshold "5"
-  healthcheck_healthy_threshold "3"
-  connection_draining_timeout "120" # if null then connection_draining_policy is disabled
-  connection_idle_timeout "90"
+  healthcheck_target  "HTTP:8080/index.html"
+  healthcheck_interval "33"
+  healthcheck_timeout "7"
+  healthcheck_unhealthy_threshold "6"
+  healthcheck_healthy_threshold "4"
+  connection_draining_timeout "122" # if null then connection_draining_policy is disabled
+  connection_idle_timeout "93"
   cross_zone  "true"
   scheme  "internal"
-  listeners do [
+  listeners do [ # Must have at least one listener defined.
     {
       "listener_name" => "elb_listener_http8080_http8080",
       "lb_protocol" => "HTTP",
-      "lb__port" => "8080",
+      "lb_port" => "8080",
       "instance_protocol" => "HTTP",
       "instance_port" => "8080"
     },
     {
       "listener_name" => "elb_listener_http80_http80",
       "lb_protocol" => "HTTP",
-      "lb__port" => "80",
+      "lb_port" => "80",
       "instance_protocol" => "HTTP",
       "instance_port" => "80"
     }
@@ -155,32 +190,6 @@ namespace "elb" do
     } end
   end
   
-#  type "listener" do
-#    provision "provision_listener"  # listeners drive LB creation
-#    delete "delete_listener"
-#    fields do
-#      field "load_balancer" do
-#        type "resource"
-#        required true
-#      end
-#      field "lb_protocol" do
-#        type "string"
-#        required true
-#      end
-#      field "lb__port" do
-#        type "string"
-#        required true
-#      end
-#      field "instance_protocol" do
-#        type "string"
-#        required true
-#      end
-#      field "instance_port" do
-#        type "string"
-#        required true
-#      end
-#    end
-#  end
   
   type "load_balancer" do                       # defines resource of type "load_balancer"
     provision "provision_lb"         # name of RCL definition to use to provision the resource
@@ -236,12 +245,81 @@ end
 # Define the RCL definitions to create and destroy the resource
 define provision_lb(@raw_elb) return @elb do
   
-  $listeners = 
+  $api_listeners = []
+  foreach $listener in @raw_elb.listeners do
+    $api_listener = {
+      lb_protocol: $listener["lb_protocol"],
+      lb_port: $listener["lb_port"],
+      instance_protocol: $listener["instance_protocol"],
+      instance_port: $listener["instance_port"]
+    }
+    $api_listeners << $api_listener
+  end
+  
+  rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "listeners:",
+      detail: to_s($api_listeners)
+    }
+  )
+  
+  $api_healthcheck = {
+    "target": @raw_elb.healthcheck_target,
+    "interval": @raw_elb.healthcheck_interval,
+    "timeout": @raw_elb.healthcheck_timeout,
+    "unhealthy_threshold": @raw_elb.healthcheck_unhealthy_threshold,
+    "healthy_threshold": @raw_elb.healthcheck_healthy_threshold
+  }
+    
+  rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "healthcheck:",
+      detail: to_s($api_healthcheck)
+    }
+  )
+  
+  $api_subnets = []
+  foreach $api_subnet in split(@raw_elb.subnets, ",") do
+    $api_subnets << $api_subnet
+  end
+  
+  rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "subnets:",
+      detail: to_s($api_subnets)
+    }
+  )
+  
+  $api_secgroups = []
+  foreach $api_secgroup in split(@raw_elb.security_groups, ",") do
+    $api_secgroups << $api_secgroup
+  end
+  
+  rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "secgroups:",
+      detail: to_s($api_secgroups)
+    }
+  )
+  
   @elb = elb.load_balancer.create({
     name: @raw_elb.name,
-    lb_listener: {protocol: @raw_elb.lb_listener_protocol, port: @raw_elb.lb_listener_port},
-    instance_listener: {protocol: @raw_elb.instance_listener_protocol, port: @raw_elb.instance_listener_port},
-    availability_zones: @raw_elb.availability_zones
+    listeners: $api_listeners,
+    healthcheck: $api_healthcheck,
+    subnets: $api_subnets,
+    secgroups: $api_secgroups,
+    connection_draining_timeout: @raw_elb.connection_draining_timeout,
+    connection_idle_timeout: @raw_elb.connection_idle_timeout,
+    cross_zone: @raw_elb.cross_zone,
+    scheme: @raw_elb.scheme
   }) # Calls .create on the API resource
   
   rs.audit_entries.create(
@@ -252,6 +330,8 @@ define provision_lb(@raw_elb) return @elb do
       detail: to_s(@elb)
     }
   )
+
+
 end
 
 define delete_elb(@elb) do
