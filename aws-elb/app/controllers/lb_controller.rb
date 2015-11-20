@@ -87,7 +87,8 @@ module V1
 	}
         api_lb_listeners << api_lb_listener
       end
-                  
+            
+      # Build params for the create      
       api_lb_params = {
         load_balancer_name: lb_name,
         subnets: request.payload.subnets,
@@ -97,6 +98,7 @@ module V1
       }
 #      app.logger.info("api_lb_params: "+api_lb_params.to_s)
       
+      # build params for the health check settings
       api_healthcheck_params = {
         load_balancer_name: lb_name,
         health_check: {
@@ -107,7 +109,23 @@ module V1
           healthy_threshold: request.payload.healthcheck.healthy_threshold
         }
       }
-
+      
+      # bulid params for the other settings
+      api_modify_lb_attributes_params = {
+        load_balancer_name: lb_name,
+        load_balancer_attributes: {
+          cross_zone_load_balancing: {
+            enabled: request.payload.cross_zone
+          }
+          connection_draining: {
+            enabled: request.payload.connection_draining_timeout ? true : false
+            timeout: request.payload.connection_draining_timeout
+          }
+          connection_settings: {
+            idle_timeout: request.payload.connection_idle_timeout
+          }
+        }
+      }
 
       begin
         # create the ELB
@@ -146,6 +164,18 @@ module V1
         self.response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
       end
+      
+      begin
+        # add other ELB attributes if provided
+        attributes_response = elb.modify_load_balancer_attributes(api_modify_lb_attributes_params)
+      rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
+               Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+          self.response = Praxis::Responses::BadRequest.new()
+          response.body = { error: e.inspect }
+      end
+      
+      # TO-DO: remove (backout) the ELB if there was a problem with a subsequent call (e.g. the health check config fails)
+      
        
 #      app.logger.info("departing response header: "+response.headers.to_s)
 #      app.logger.info("departing response body: "+response.body.to_s)
