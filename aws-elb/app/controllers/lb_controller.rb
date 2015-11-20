@@ -116,11 +116,11 @@ module V1
         load_balancer_attributes: {
           cross_zone_load_balancing: {
             enabled: request.payload.cross_zone
-          }
+          },
           connection_draining: {
-            enabled: request.payload.connection_draining_timeout ? true : false
+            enabled: request.payload.connection_draining_timeout ? true : false,
             timeout: request.payload.connection_draining_timeout
-          }
+          },
           connection_settings: {
             idle_timeout: request.payload.connection_idle_timeout
           }
