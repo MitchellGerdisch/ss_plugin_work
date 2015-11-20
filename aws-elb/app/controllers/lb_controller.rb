@@ -138,7 +138,7 @@ module V1
         api_tags << api_tag
       end
       api_add_tags_params = {
-        load_balancer_name: lb_name,
+        load_balancer_names: [lb_name],
         tags: api_tags
       }
 
