@@ -326,7 +326,7 @@ define provision_lb(@raw_elb) return @elb do
     connection_draining_timeout: @raw_elb.connection_draining_timeout,
     connection_idle_timeout: @raw_elb.connection_idle_timeout,
     cross_zone: @raw_elb.cross_zone,
-    scheme: @raw_elb.scheme
+    scheme: @raw_elb.scheme,
     tags: @raw_elb.tags
   }) # Calls .create on the API resource
   
@@ -338,12 +338,10 @@ define provision_lb(@raw_elb) return @elb do
       detail: to_s(@elb)
     }
   )
-
-
 end
 
-define delete_elb(@elb) do
-#  @elb.destroy() # Calls .delete on the API resource
+define delete_lb(@elb) do
+  @elb.destroy() # Calls .delete on the API resource
 end
 
 

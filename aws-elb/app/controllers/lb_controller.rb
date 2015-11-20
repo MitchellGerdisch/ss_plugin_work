@@ -131,9 +131,12 @@ module V1
       api_tags = []
       tags_array = request.payload.tags
       tags_array.each do |tag|
+        split_tag = tag.split(":")
+        keyname = split_tag[0]
+        val = split_tag.drop(1).join(":")  # need to account for the possiblity that the tag value has colons. This drops the first value which should be the key and then puts things back if they were split above
         api_tag = {
-          key: tag.split(":")[0],
-          value: tag.split(":")[1]
+          key: keyname,
+          value: val
         }
         api_tags << api_tag
       end
