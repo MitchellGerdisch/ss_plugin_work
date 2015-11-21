@@ -173,12 +173,7 @@ resource "elb", type: "elb.load_balancer" do
       "instance_port" => "80"
     }
   ] end
-  tags  [
-    join(["ASV:",map($map_config, "CMDBApplicationService", $param_elb_envtype)]),
-    join(["CMDBEnvironment:",map($map_config, "CMDBEnvironment", $param_elb_envtype)]),
-    join(["OwnerContact:",$param_elb_owner]),
-    join(["SNSTopicARN:",map($map_config, "SNSAppNotifyTopic", $param_elb_envtype)])
-    ]
+  tags join(["ASV:",map($map_config, "CMDBApplicationService", $param_elb_envtype)]), join(["CMDBEnvironment:",map($map_config, "CMDBEnvironment", $param_elb_envtype)]), join(["OwnerContact:",$param_elb_owner]), join(["SNSTopicARN:",map($map_config, "SNSAppNotifyTopic", $param_elb_envtype)])
 end
 
 #########
@@ -317,6 +312,15 @@ define provision_lb(@raw_elb) return @elb do
     }
   )
   
+  rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "tags:",
+      detail: to_s(@raw_elb.tags)
+    }
+  )
+  
   @elb = elb.load_balancer.create({
     name: @raw_elb.name,
     listeners: $api_listeners,
@@ -330,14 +334,7 @@ define provision_lb(@raw_elb) return @elb do
     tags: @raw_elb.tags
   }) # Calls .create on the API resource
   
-  rs.audit_entries.create(
-    notify: "None",
-    audit_entry: {
-      auditee_href: @@deployment,
-      summary: "listener:",
-      detail: to_s(@elb)
-    }
-  )
+
 end
 
 define delete_lb(@elb) do
