@@ -66,16 +66,16 @@ resource "elb", type: "elb.load_balancer" do
     {
       "listener_name" => "elb_listener_http8080_http8080",
       "lb_protocol" => "HTTP",
-      "lb_port" => "8080",
+      "lb_port" => "8888",
       "instance_protocol" => "HTTP",
-      "instance_port" => "8080"
+      "instance_port" => "8888"
     },
     {
       "listener_name" => "elb_listener_http80_http80",
       "lb_protocol" => "HTTP",
-      "lb_port" => "80",
+      "lb_port" => "6666",
       "instance_protocol" => "HTTP",
-      "instance_port" => "80"
+      "instance_port" => "6666"
     }
   ] end
 end

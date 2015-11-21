@@ -93,6 +93,7 @@ module V1
         load_balancer_name: lb_name,
         subnets: request.payload.subnets,
         security_groups: request.payload.secgroups,
+        availability_zones: request.payload.availability_zones,
         listeners: api_lb_listeners,
         scheme: request.payload.scheme,
       }

@@ -34,8 +34,9 @@ module V1
         payload do
           attribute :name, required: true
           attribute :listeners, required: true
-          attribute :subnets, required: true
-          attribute :secgroups, required: true
+          attribute :availability_zones
+          attribute :subnets
+          attribute :secgroups
           attribute :healthcheck 
           attribute :connection_draining_timeout
           attribute :connection_idle_timeout
