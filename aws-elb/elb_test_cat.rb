@@ -1,4 +1,4 @@
-name "Elastic Load Balancer"
+name "Elastic Load Balancer - basic"
 rs_ca_ver 20131202
 short_description "Allows you to create and manage AWS Elastic Load Balancers like any other CAT resource."
 
@@ -61,12 +61,26 @@ end
 
 resource "elb", type: "elb.load_balancer" do
   name                  $elb_name
-  lb_listener_protocol  $lb_protocol
-  lb_listener_port      $lb_port
-  instance_listener_protocol  $instance_protocol
-  instance_listener_port  $instance_port
   availability_zones  $availability_zones
+  listeners do [ # Must have at least one listener defined.
+    {
+      "listener_name" => "elb_listener_http8080_http8080",
+      "lb_protocol" => "HTTP",
+      "lb_port" => "8080",
+      "instance_protocol" => "HTTP",
+      "instance_port" => "8080"
+    },
+    {
+      "listener_name" => "elb_listener_http80_http80",
+      "lb_protocol" => "HTTP",
+      "lb_port" => "80",
+      "instance_protocol" => "HTTP",
+      "instance_port" => "80"
+    }
+  ] end
 end
+
+
 
 #########
 # AWS ELB Service
@@ -80,60 +94,156 @@ namespace "elb" do
       "X-Api-Shared-Secret" => "12345"  # Shared secret set up on the Praxis App server providing the ELB plugin service
     } end
   end
-  type "load_balancer" do                       # defines resource of type "droplet"
-    provision "provision_elb"         # name of RCL definition to use to provision the resource
-    delete "delete_elb"               # name of RCL definition to use to delete the resource
-    fields do                             # field of a droplet with rules for validation
+  type "load_balancer" do                       # defines resource of type "load_balancer"
+    provision "provision_lb"         # name of RCL definition to use to provision the resource
+    delete "delete_lb"               # name of RCL definition to use to delete the resource
+    fields do                          
       field "name" do                               
         type "string"
         required true
       end
-      field "lb_listener_protocol" do                               
+      field "subnets" do                               
         type "string"
+      end
+      field "security_groups" do                               
+        type "string"
+      end
+      field "healthcheck_target" do                               
+        type "string"
+      end
+      field "healthcheck_interval" do
+        type "string"
+      end
+      field "healthcheck_timeout" do
+        type "string"
+      end
+      field "healthcheck_unhealthy_threshold" do
+        type "string"
+      end
+      field "healthcheck_healthy_threshold" do
+        type "string"
+      end
+      field "connection_draining_timeout" do
+        type "string"
+      end
+      field "connection_idle_timeout" do
+        type "string"
+      end
+      field "cross_zone" do
+        type "string"
+      end
+      field "scheme" do
+        type "string"
+      end
+      field "listeners" do
+        type "composite"
         required true
       end
-      field "lb_listener_port" do                               
-        type "string"
-        required true
-      end
-      field "instance_listener_protocol" do                               
-        type "string"
-        required true
-      end
-      field "instance_listener_port" do                               
-        type "string"
-        required true
-      end
-      field "availability_zones" do                               
+      field "tags" do
         type "array"
-        required true
       end
     end
   end
 end
 
 # Define the RCL definitions to create and destroy the resource
-define provision_elb(@raw_elb) return @elb do
+define provision_lb(@raw_elb) return @elb do
+  
+  $api_listeners = []
+  foreach $listener in @raw_elb.listeners do
+    $api_listener = {
+      lb_protocol: $listener["lb_protocol"],
+      lb_port: $listener["lb_port"],
+      instance_protocol: $listener["instance_protocol"],
+      instance_port: $listener["instance_port"]
+    }
+    $api_listeners << $api_listener
+  end
+  
+  rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "listeners:",
+      detail: to_s($api_listeners)
+    }
+  )
+  
+  $api_healthcheck = {
+    "target": @raw_elb.healthcheck_target,
+    "interval": @raw_elb.healthcheck_interval,
+    "timeout": @raw_elb.healthcheck_timeout,
+    "unhealthy_threshold": @raw_elb.healthcheck_unhealthy_threshold,
+    "healthy_threshold": @raw_elb.healthcheck_healthy_threshold
+  }
+    
+  rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "healthcheck:",
+      detail: to_s($api_healthcheck)
+    }
+  )
+  
+  $api_subnets = []
+  foreach $api_subnet in split(@raw_elb.subnets, ",") do
+    $api_subnets << $api_subnet
+  end
+  
+  rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "subnets:",
+      detail: to_s($api_subnets)
+    }
+  )
+  
+  $api_secgroups = []
+  foreach $api_secgroup in split(@raw_elb.security_groups, ",") do
+    $api_secgroups << $api_secgroup
+  end
+  
+  rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "secgroups:",
+      detail: to_s($api_secgroups)
+    }
+  )
+  
+  rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "tags:",
+      detail: to_s(@raw_elb.tags)
+    }
+  )
+  
   @elb = elb.load_balancer.create({
     name: @raw_elb.name,
-    lb_listener: {protocol: @raw_elb.lb_listener_protocol, port: @raw_elb.lb_listener_port},
-    instance_listener: {protocol: @raw_elb.instance_listener_protocol, port: @raw_elb.instance_listener_port},
-    availability_zones: @raw_elb.availability_zones
+    availability_zones: 
+    listeners: $api_listeners,
+    healthcheck: $api_healthcheck,
+    subnets: $api_subnets,
+    secgroups: $api_secgroups,
+    connection_draining_timeout: @raw_elb.connection_draining_timeout,
+    connection_idle_timeout: @raw_elb.connection_idle_timeout,
+    cross_zone: @raw_elb.cross_zone,
+    scheme: @raw_elb.scheme,
+    tags: @raw_elb.tags
   }) # Calls .create on the API resource
   
-#rs.audit_entries.create(
-#    notify: "None",
-#    audit_entry: {
-#      auditee_href: @@deployment,
-#      summary: "$elb output",
-#      detail: to_s(@elb)
-#    }
-#  )
+
 end
 
-define delete_elb(@elb) do
+define delete_lb(@elb) do
   @elb.destroy() # Calls .delete on the API resource
 end
+
 
 #########
 # Parameters
