@@ -68,6 +68,9 @@ module V1
       response
     end
     
+########
+# CREATE
+########
     def create(**params)
       app = Praxis::Application.instance
       
@@ -99,17 +102,20 @@ module V1
       }
 #      app.logger.info("api_lb_params: "+api_lb_params.to_s)
       
-      # build params for the health check settings
-      api_healthcheck_params = {
-        load_balancer_name: lb_name,
-        health_check: {
-          target: request.payload.healthcheck.target,
-          interval: request.payload.healthcheck.interval,
-          timeout: request.payload.healthcheck.timeout,
-          unhealthy_threshold: request.payload.healthcheck.unhealthy_threshold,
-          healthy_threshold: request.payload.healthcheck.healthy_threshold
+      # build params for the health check settings if set
+      if request.payload.key?(:healthcheck)  # Did the user specify healthcheck stuff?
+     
+        api_healthcheck_params = {
+          load_balancer_name: lb_name,
+          health_check: {
+            target: request.payload.healthcheck.target,
+            interval: request.payload.healthcheck.interval,
+            timeout: request.payload.healthcheck.timeout,
+            unhealthy_threshold: request.payload.healthcheck.unhealthy_threshold,
+            healthy_threshold: request.payload.healthcheck.healthy_threshold
+          }
         }
-      }
+      end
       
       # bulid params for the other settings
       api_modify_lb_attributes_params = {
@@ -134,7 +140,7 @@ module V1
       tags_array.each do |tag|
         split_tag = tag.split(":")
         keyname = split_tag[0]
-        val = split_tag.drop(1).join(":")  # need to account for the possiblity that the tag value has colons. This drops the first value which should be the key and then puts things back if they were split above
+        val = split_tag.drop(1).join(":")  # need to account for the possibility that the tag value has colons. This drops the first value which should be the key and then puts things back if they were split above
         api_tag = {
           key: keyname,
           value: val

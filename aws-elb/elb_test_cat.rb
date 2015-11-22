@@ -62,6 +62,11 @@ end
 resource "elb", type: "elb.load_balancer" do
   name                  $elb_name
   availability_zones  $availability_zones
+  healthcheck_target  "HTTP:8080/index.html"
+  healthcheck_interval "33"
+  healthcheck_timeout "7"
+  healthcheck_unhealthy_threshold "6"
+  healthcheck_healthy_threshold "4"
   listeners do [ # Must have at least one listener defined.
     {
       "listener_name" => "elb_listener_http8080_http8080",
