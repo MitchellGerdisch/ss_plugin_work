@@ -156,7 +156,7 @@ module V1
         
       end
       
-      # bulid params for the other settings
+      # build params for the other settings
       api_modify_lb_attributes_params = {
         load_balancer_name: lb_name,
         load_balancer_attributes: {
@@ -164,7 +164,7 @@ module V1
             enabled: request.payload.cross_zone
           },
           connection_draining: {
-            enabled: request.payload.connection_draining_timeout ? true : false,
+            enabled: request.payload.key?(:connection_draining_timeout) ? true : false,
             timeout: request.payload.connection_draining_timeout
           },
           connection_settings: {
