@@ -164,7 +164,7 @@ module V1
             enabled: request.payload.cross_zone
           },
           connection_draining: {
-            enabled: request.payload.key?(:connection_draining_timeout) ? true : false,
+            enabled: request.payload.key?(:connection_draining_timeout) ? "true" : "false",
             timeout: request.payload.connection_draining_timeout
           },
           connection_settings: {
