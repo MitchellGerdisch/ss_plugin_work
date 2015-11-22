@@ -102,56 +102,6 @@ module V1
       }
 #      app.logger.info("api_lb_params: "+api_lb_params.to_s)
       
-      # build params for the health check settings if set
-      if request.payload.key?(:healthcheck)  # Did the user specify healthcheck stuff?
-     
-        api_healthcheck_params = {
-          load_balancer_name: lb_name,
-          health_check: {
-            target: request.payload.healthcheck.target,
-            interval: request.payload.healthcheck.interval,
-            timeout: request.payload.healthcheck.timeout,
-            unhealthy_threshold: request.payload.healthcheck.unhealthy_threshold,
-            healthy_threshold: request.payload.healthcheck.healthy_threshold
-          }
-        }
-      end
-      
-      # bulid params for the other settings
-      api_modify_lb_attributes_params = {
-        load_balancer_name: lb_name,
-        load_balancer_attributes: {
-          cross_zone_load_balancing: {
-            enabled: request.payload.cross_zone
-          },
-          connection_draining: {
-            enabled: request.payload.connection_draining_timeout ? true : false,
-            timeout: request.payload.connection_draining_timeout
-          },
-          connection_settings: {
-            idle_timeout: request.payload.connection_idle_timeout
-          }
-        }
-      }
-      
-      # build params for the tags
-      api_tags = []
-      tags_array = request.payload.tags
-      tags_array.each do |tag|
-        split_tag = tag.split(":")
-        keyname = split_tag[0]
-        val = split_tag.drop(1).join(":")  # need to account for the possibility that the tag value has colons. This drops the first value which should be the key and then puts things back if they were split above
-        api_tag = {
-          key: keyname,
-          value: val
-        }
-        api_tags << api_tag
-      end
-      api_add_tags_params = {
-        load_balancer_names: [lb_name],
-        tags: api_tags
-      }
-
       begin
         # create the ELB
         create_lb_response = elb.create_load_balancer(api_lb_params)
@@ -181,14 +131,47 @@ module V1
 #        app.logger.info("error response body:"+response.body.to_s)
       end
       
-      begin
-        # add healthcheck properties to the ELB
-        healthcheck_response = elb.configure_health_check(api_healthcheck_params)
-      rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
-             Aws::ElasticLoadBalancing::Errors::InvalidInput => e
-        self.response = Praxis::Responses::BadRequest.new()
-        response.body = { error: e.inspect }
+      # configure health check settings if those params were set
+      if request.payload.key?(:healthcheck)  # Did the user specify healthcheck stuff? 
+        
+        api_healthcheck_params = {
+          load_balancer_name: lb_name,
+          health_check: {
+            target: request.payload.healthcheck.target,
+            interval: request.payload.healthcheck.interval,
+            timeout: request.payload.healthcheck.timeout,
+            unhealthy_threshold: request.payload.healthcheck.unhealthy_threshold,
+            healthy_threshold: request.payload.healthcheck.healthy_threshold
+          }
+        }
+        
+        begin
+          # add healthcheck properties to the ELB
+          healthcheck_response = elb.configure_health_check(api_healthcheck_params)
+        rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
+               Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+          self.response = Praxis::Responses::BadRequest.new()
+          response.body = { error: e.inspect }
+        end
+        
       end
+      
+      # bulid params for the other settings
+      api_modify_lb_attributes_params = {
+        load_balancer_name: lb_name,
+        load_balancer_attributes: {
+          cross_zone_load_balancing: {
+            enabled: request.payload.cross_zone
+          },
+          connection_draining: {
+            enabled: request.payload.connection_draining_timeout ? true : false,
+            timeout: request.payload.connection_draining_timeout
+          },
+          connection_settings: {
+            idle_timeout: request.payload.connection_idle_timeout
+          }
+        }
+      }
       
       begin
         # add other ELB attributes if provided
@@ -199,17 +182,36 @@ module V1
           response.body = { error: e.inspect }
       end
       
-      begin
-        # add tags
-        tagging_response = elb.add_tags(api_add_tags_params)
-      rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
-               Aws::ElasticLoadBalancing::Errors::InvalidInput => e
-          self.response = Praxis::Responses::BadRequest.new()
-          response.body = { error: e.inspect }
+      # build params for the tags
+      if request.payload.key?(:tags)  # Did the user specify tags stuff?
+        api_tags = []
+        tags_array = request.payload.tags
+        tags_array.each do |tag|
+          split_tag = tag.split(":")
+          keyname = split_tag[0]
+          val = split_tag.drop(1).join(":")  # need to account for the possibility that the tag value has colons. This drops the first value which should be the key and then puts things back if they were split above
+          api_tag = {
+            key: keyname,
+            value: val
+          }
+          api_tags << api_tag
+        end
+        api_add_tags_params = {
+          load_balancer_names: [lb_name],
+          tags: api_tags
+        }
+      
+        begin
+          # add tags
+          tagging_response = elb.add_tags(api_add_tags_params)
+        rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
+                 Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+            self.response = Praxis::Responses::BadRequest.new()
+            response.body = { error: e.inspect }
+        end
       end
       
       # TO-DO: remove (backout) the ELB if there was a problem with a subsequent call (e.g. the health check config fails)
-      
        
 #      app.logger.info("departing response header: "+response.headers.to_s)
 #      app.logger.info("departing response body: "+response.body.to_s)
