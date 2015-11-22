@@ -156,30 +156,32 @@ module V1
         
       end
       
-      # build params for the other settings
-      api_modify_lb_attributes_params = {
-        load_balancer_name: lb_name,
-        load_balancer_attributes: {
-          cross_zone_load_balancing: {
-            enabled: request.payload.cross_zone
-          },
-          connection_draining: {
-            enabled: request.payload.key?(:connection_draining_timeout) ? "true" : "false",
-            timeout: request.payload.connection_draining_timeout
-          },
-          connection_settings: {
-            idle_timeout: request.payload.connection_idle_timeout
+      if request.payload.key?(:cross_zone) || request.payload.key?(:connection_draining_timeout) # Did the user specify healthcheck stuff? 
+        # build params for the other settings
+        api_modify_lb_attributes_params = {
+          load_balancer_name: lb_name,
+          load_balancer_attributes: {
+            cross_zone_load_balancing: {
+              enabled: request.payload.cross_zone
+            },
+            connection_draining: {
+              enabled: request.payload.key?(:connection_draining_timeout) ? true : false,
+              timeout: request.payload.connection_draining_timeout
+            },
+            connection_settings: {
+              idle_timeout: request.payload.connection_idle_timeout
+            }
           }
         }
-      }
-      
-      begin
-        # add other ELB attributes if provided
-        attributes_response = elb.modify_load_balancer_attributes(api_modify_lb_attributes_params)
-      rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
-               Aws::ElasticLoadBalancing::Errors::InvalidInput => e
-          self.response = Praxis::Responses::BadRequest.new()
-          response.body = { error: e.inspect }
+        
+        begin
+          # add other ELB attributes if provided
+          attributes_response = elb.modify_load_balancer_attributes(api_modify_lb_attributes_params)
+        rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
+                 Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+            self.response = Praxis::Responses::BadRequest.new()
+            response.body = { error: e.inspect }
+        end
       end
       
       # build params for the tags
