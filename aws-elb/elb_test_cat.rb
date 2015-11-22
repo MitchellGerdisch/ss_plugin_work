@@ -1,3 +1,5 @@
+# DOESN'T SUPPORT MULTI AVAILABLITY ZONES
+
 name "Elastic Load Balancer - basic"
 rs_ca_ver 20131202
 short_description "Allows you to create and manage AWS Elastic Load Balancers like any other CAT resource."
@@ -49,7 +51,7 @@ end
 
 parameter "availability_zones" do
   category "ELB"
-  label "Instances Port"
+  label "Availability Zones"
   type "list"
   default "us-east-1a"
 end
@@ -62,25 +64,13 @@ end
 resource "elb", type: "elb.load_balancer" do
   name                  $elb_name
   availability_zones  $availability_zones
-  healthcheck_target  "HTTP:8080/index.html"
-  healthcheck_interval "33"
-  healthcheck_timeout "7"
-  healthcheck_unhealthy_threshold "6"
-  healthcheck_healthy_threshold "4"
   listeners do [ # Must have at least one listener defined.
     {
       "listener_name" => "elb_listener_http8080_http8080",
-      "lb_protocol" => "HTTP",
-      "lb_port" => "8888",
-      "instance_protocol" => "HTTP",
-      "instance_port" => "8888"
-    },
-    {
-      "listener_name" => "elb_listener_http80_http80",
-      "lb_protocol" => "HTTP",
-      "lb_port" => "6666",
-      "instance_protocol" => "HTTP",
-      "instance_port" => "6666"
+      "lb_protocol" => $lb_protocol,
+      "lb_port" => $lb_port,
+      "instance_protocol" => $instance_protocol,
+      "instance_port" => $instance_port
     }
   ] end
 end
@@ -99,6 +89,8 @@ namespace "elb" do
       "X-Api-Shared-Secret" => "12345"  # Shared secret set up on the Praxis App server providing the ELB plugin service
     } end
   end
+  
+  
   type "load_balancer" do                       # defines resource of type "load_balancer"
     provision "provision_lb"         # name of RCL definition to use to provision the resource
     delete "delete_lb"               # name of RCL definition to use to delete the resource
@@ -109,6 +101,9 @@ namespace "elb" do
       end
       field "subnets" do                               
         type "string"
+      end
+      field "availability_zones" do
+        type "array"
       end
       field "security_groups" do                               
         type "string"
@@ -165,81 +160,21 @@ define provision_lb(@raw_elb) return @elb do
     $api_listeners << $api_listener
   end
   
-  rs.audit_entries.create(
-    notify: "None",
-    audit_entry: {
-      auditee_href: @@deployment,
-      summary: "listeners:",
-      detail: to_s($api_listeners)
-    }
-  )
+#  rs.audit_entries.create(
+#    notify: "None",
+#    audit_entry: {
+#      auditee_href: @@deployment,
+#      summary: "listeners:",
+#      detail: to_s($api_listeners)
+#    }
+#  )
   
-  $api_healthcheck = {
-    "target": @raw_elb.healthcheck_target,
-    "interval": @raw_elb.healthcheck_interval,
-    "timeout": @raw_elb.healthcheck_timeout,
-    "unhealthy_threshold": @raw_elb.healthcheck_unhealthy_threshold,
-    "healthy_threshold": @raw_elb.healthcheck_healthy_threshold
-  }
-    
-  rs.audit_entries.create(
-    notify: "None",
-    audit_entry: {
-      auditee_href: @@deployment,
-      summary: "healthcheck:",
-      detail: to_s($api_healthcheck)
-    }
-  )
-  
-  $api_subnets = []
-  foreach $api_subnet in split(@raw_elb.subnets, ",") do
-    $api_subnets << $api_subnet
-  end
-  
-  rs.audit_entries.create(
-    notify: "None",
-    audit_entry: {
-      auditee_href: @@deployment,
-      summary: "subnets:",
-      detail: to_s($api_subnets)
-    }
-  )
-  
-  $api_secgroups = []
-  foreach $api_secgroup in split(@raw_elb.security_groups, ",") do
-    $api_secgroups << $api_secgroup
-  end
-  
-  rs.audit_entries.create(
-    notify: "None",
-    audit_entry: {
-      auditee_href: @@deployment,
-      summary: "secgroups:",
-      detail: to_s($api_secgroups)
-    }
-  )
-  
-  rs.audit_entries.create(
-    notify: "None",
-    audit_entry: {
-      auditee_href: @@deployment,
-      summary: "tags:",
-      detail: to_s(@raw_elb.tags)
-    }
-  )
+
   
   @elb = elb.load_balancer.create({
     name: @raw_elb.name,
-    availability_zones: 
-    listeners: $api_listeners,
-    healthcheck: $api_healthcheck,
-    subnets: $api_subnets,
-    secgroups: $api_secgroups,
-    connection_draining_timeout: @raw_elb.connection_draining_timeout,
-    connection_idle_timeout: @raw_elb.connection_idle_timeout,
-    cross_zone: @raw_elb.cross_zone,
-    scheme: @raw_elb.scheme,
-    tags: @raw_elb.tags
+    availability_zones: @raw_elb.availability_zones,
+    listeners: $api_listeners
   }) # Calls .create on the API resource
   
 
