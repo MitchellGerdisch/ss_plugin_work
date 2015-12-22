@@ -181,7 +181,8 @@ end
 #########
 namespace "elb" do
   service do
-    host "184.73.90.169:8888"        # HTTP endpoint presenting an API defined by self-service to act on resources
+    host "https://184.73.90.169:8443"        # HTTP endpoint presenting an API defined by self-service to act on resources
+                                             # The Praxis server for this is sitting behind a nginx proxy serving HTTPS
     path "/elb"           # path prefix for all resources, RightScale account_id substituted in for multi-tenancy
     headers do {
       "X-Api-Version" => "1.0",

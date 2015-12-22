@@ -82,7 +82,7 @@ end
 #########
 namespace "elb" do
   service do
-    host "184.73.90.169:8888"        # HTTP endpoint presenting an API defined by self-service to act on resources
+    host "https://184.73.90.169:8443"         # HTTP endpoint presenting an API defined by self-service to act on resources
     path "/elb"           # path prefix for all resources, RightScale account_id substituted in for multi-tenancy
     headers do {
       "X-Api-Version" => "1.0",
@@ -95,10 +95,10 @@ namespace "elb" do
     provision "provision_lb"         # name of RCL definition to use to provision the resource
     delete "delete_lb"               # name of RCL definition to use to delete the resource
     fields do                          
-      field "name" do                               
-        type "string"
-        required true
-      end
+#      field "name" do                               
+#        type "string"
+#        required true
+#      end
       field "subnets" do                               
         type "string"
       end

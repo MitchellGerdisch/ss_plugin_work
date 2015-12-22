@@ -1,0 +1,23 @@
+# HTTPS server
+# Make self-signed certs and place in /etc/nginx using this command:
+#   openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 700 -nodes
+# Change PRIVATE_IP_SERVER and PORT_PRAXIS_RACK_APP_IS_LISTENING_ON accordingly
+server {
+        listen 8443; # LISTENER PORT
+        server_name localhost;
+        ssl on;
+        ssl_certificate cert.pem;
+        ssl_certificate_key cert.key;
+        ssl_session_timeout 5m;
+        ssl_protocols SSLv3 TLSv1 TLSv1.1 TLSv1.2;
+        ssl_ciphers "HIGH:!aNULL:!MD5 or HIGH:!aNULL:!MD5:!3DES";
+        ssl_prefer_server_ciphers on;
+ 
+        underscores_in_headers  on;  # Needed if you use headers with underscores which I did
+ 
+        # Example for the ELB plugin
+        location /elb {
+                proxy_pass      http://PRIVATE_IP_SERVER:PORT_PRAXIS_RACK_APP_IS_LISTENING_ON/elb;
+                proxy_pass_request_headers      on;
+        }
+}
