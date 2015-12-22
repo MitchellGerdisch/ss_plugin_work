@@ -44,6 +44,7 @@ module V1
           attribute :cross_zone
           attribute :scheme
           attribute :tags
+          attribute :aws_creds
         end
         response :created
         response :bad_request

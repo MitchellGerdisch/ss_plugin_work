@@ -29,6 +29,7 @@ module V1
           attribute :app_cookie_name, Attributor::String
         end
         attribute :tags, Attributor::Collection.of(String)
+        attribute :aws_creds, Attributor::Collection.of(String)
 
       end
 

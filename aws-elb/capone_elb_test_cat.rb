@@ -186,7 +186,7 @@ namespace "elb" do
     path "/elb"           # path prefix for all resources, RightScale account_id substituted in for multi-tenancy
     headers do {
       "X-Api-Version" => "1.0",
-      "X-Api-Shared-Secret" => "12345"  # Shared secret set up on the Praxis App server providing the ELB plugin service
+      "X-Api-Shared-Secret" => "12345",  # Shared secret set up on the Praxis App server providing the ELB plugin service
     } end
   end
   
@@ -247,6 +247,15 @@ end
 
 # Define the RCL definitions to create and destroy the resource
 define provision_lb(@raw_elb) return @elb do
+  
+#  rs.audit_entries.create(
+#    notify: "None",
+#    audit_entry: {
+#      auditee_href: @@deployment,
+#      summary: "raw_elb:",
+#      detail: to_s(to_object(@raw_elb))
+#    }
+#  )
   
   $api_listeners = []
   foreach $listener in @raw_elb.listeners do
@@ -322,6 +331,18 @@ define provision_lb(@raw_elb) return @elb do
     }
   )
   
+  # Get the AWS creds and send them to the plugin server to use
+  # NOTE: HTTPS is being used to protect the these values.
+  @cred = rs.credentials.get(filter: "name==AWS_ACCESS_KEY_ID", view: "sensitive") 
+  $cred_hash = to_object(@cred)
+  $cred_value = $cred_hash["details"][0]["value"]
+  aws_access_key_id = $cred_value
+  
+  @cred = rs.credentials.get(filter: "name==AWS_SECRET_ACCESS_KEY", view: "sensitive") 
+  $cred_hash = to_object(@cred)
+  $cred_value = $cred_hash["details"][0]["value"]
+  aws_secret_access_key = $cred_value
+  
   @elb = elb.load_balancer.create({
     name: @raw_elb.name,
     listeners: $api_listeners,
@@ -332,7 +353,8 @@ define provision_lb(@raw_elb) return @elb do
     connection_idle_timeout: @raw_elb.connection_idle_timeout,
     cross_zone: @raw_elb.cross_zone,
     scheme: @raw_elb.scheme,
-    tags: @raw_elb.tags
+    tags: @raw_elb.tags,
+    aws_creds: [$aws_access_key_id, $aws_secret_access_key]
   }) # Calls .create on the API resource
   
 

@@ -10,8 +10,8 @@ Praxis::ApiDefinition.define do
   trait :authorized do
     headers do
       key "X_Api_Shared_Secret", String, required: true
-      key "Aws_Access_Key_Id", String, required: true
-      key "Aws_Secret_Access_Key", String, required: true
+#      key "Aws_Access_Key_Id", String, required: true
+#      key "Aws_Secret_Access_Key", String, required: true
     end
   end
 end

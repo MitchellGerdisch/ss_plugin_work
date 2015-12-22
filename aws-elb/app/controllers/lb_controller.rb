@@ -9,11 +9,7 @@ module V1
     app = Praxis::Application.instance
 
     def index(**params)
-      # NOTE THE ASSUMPTION IS THAT HTTPS IS BEING USED SO KEYS ARE NOT SNIFFABLE
-      aws_access_key_id = request.headers["Aws_Access_Key_Id"]
-      aws_secret_access_key = request.headers["Aws_Secret_Access_Key"]
-      credentials = ::Aws::Credentials.new(aws_access_key_id, aws_secret_access_key)
-      elb = ::Aws::ElasticLoadBalancing::Client.new(region: 'us-east-1', credentials: credentials)
+      elb = V1::Helpers::Aws.get_elb_client
 
       begin
         load_balancers = []
@@ -40,11 +36,7 @@ module V1
     def show(id:, **params)
       app = Praxis::Application.instance
       
-      # NOTE THE ASSUMPTION IS THAT HTTPS IS BEING USED SO KEYS ARE NOT SNIFFABLE
-      aws_access_key_id = request.headers["Aws_Access_Key_Id"]
-      aws_secret_access_key = request.headers["Aws_Secret_Access_Key"]
-      credentials = ::Aws::Credentials.new(aws_access_key_id, aws_secret_access_key)
-      elb = ::Aws::ElasticLoadBalancing::Client.new(region: 'us-east-1', credentials: credentials)
+      elb = V1::Helpers::Aws.get_elb_client
       
       lb_params = {
         load_balancer_names: [id],
@@ -83,10 +75,13 @@ module V1
       app = Praxis::Application.instance
       
       # NOTE THE ASSUMPTION IS THAT HTTPS IS BEING USED SO KEYS ARE NOT SNIFFABLE
-      aws_access_key_id = request.headers["Aws_Access_Key_Id"]
-      aws_secret_access_key = request.headers["Aws_Secret_Access_Key"]
-      credentials = ::Aws::Credentials.new(aws_access_key_id, aws_secret_access_key)
-      elb = ::Aws::ElasticLoadBalancing::Client.new(region: 'us-east-1', credentials: credentials)
+      aws_access_key_id = request.payload.aws_creds[0]
+      aws_secret_access_key = request.payload.aws_creds[1]
+      # Place them in the environment so they can be used for the AWS calls
+      ENV['AWS_ACCESS_KEY_ID'] = aws_access_key_id
+      ENV['AWS_SECRET_ACCESS_KEY'] = aws_secret_access_key
+      
+      elb = V1::Helpers::Aws.get_elb_client
       
       lb_name = request.payload.name
       
