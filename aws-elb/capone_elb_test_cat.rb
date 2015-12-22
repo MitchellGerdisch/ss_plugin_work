@@ -194,10 +194,10 @@ namespace "elb" do
     provision "provision_lb"         # name of RCL definition to use to provision the resource
     delete "delete_lb"               # name of RCL definition to use to delete the resource
     fields do                          
-      field "name" do                               
-        type "string"
-        required true
-      end
+#      field "name" do                               
+#        type "string"
+#        required true
+#      end
       field "subnets" do                               
         type "string"
         required true
