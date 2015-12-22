@@ -9,7 +9,11 @@ module V1
     app = Praxis::Application.instance
 
     def index(**params)
-      elb = V1::Helpers::Aws.get_elb_client
+      # NOTE THE ASSUMPTION IS THAT HTTPS IS BEING USED SO KEYS ARE NOT SNIFFABLE
+      aws_access_key_id = request.headers["Aws_Access_Key_Id"]
+      aws_secret_access_key = request.headers["Aws_Secret_Access_Key"]
+      credentials = ::Aws::Credentials.new(aws_access_key_id, aws_secret_access_key)
+      elb = ::Aws::ElasticLoadBalancing::Client.new(region: 'us-east-1', credentials: credentials)
 
       begin
         load_balancers = []
@@ -36,7 +40,11 @@ module V1
     def show(id:, **params)
       app = Praxis::Application.instance
       
-      elb = V1::Helpers::Aws.get_elb_client
+      # NOTE THE ASSUMPTION IS THAT HTTPS IS BEING USED SO KEYS ARE NOT SNIFFABLE
+      aws_access_key_id = request.headers["Aws_Access_Key_Id"]
+      aws_secret_access_key = request.headers["Aws_Secret_Access_Key"]
+      credentials = ::Aws::Credentials.new(aws_access_key_id, aws_secret_access_key)
+      elb = ::Aws::ElasticLoadBalancing::Client.new(region: 'us-east-1', credentials: credentials)
       
       lb_params = {
         load_balancer_names: [id],
@@ -74,7 +82,11 @@ module V1
     def create(**params)
       app = Praxis::Application.instance
       
-      elb = V1::Helpers::Aws.get_elb_client
+      # NOTE THE ASSUMPTION IS THAT HTTPS IS BEING USED SO KEYS ARE NOT SNIFFABLE
+      aws_access_key_id = request.headers["Aws_Access_Key_Id"]
+      aws_secret_access_key = request.headers["Aws_Secret_Access_Key"]
+      credentials = ::Aws::Credentials.new(aws_access_key_id, aws_secret_access_key)
+      elb = ::Aws::ElasticLoadBalancing::Client.new(region: 'us-east-1', credentials: credentials)
       
       lb_name = request.payload.name
       
