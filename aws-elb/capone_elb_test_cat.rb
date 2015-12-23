@@ -336,12 +336,12 @@ define provision_lb(@raw_elb) return @elb do
   @cred = rs.credentials.get(filter: "name==AWS_ACCESS_KEY_ID", view: "sensitive") 
   $cred_hash = to_object(@cred)
   $cred_value = $cred_hash["details"][0]["value"]
-  aws_access_key_id = $cred_value
+  $aws_access_key_id = $cred_value
   
   @cred = rs.credentials.get(filter: "name==AWS_SECRET_ACCESS_KEY", view: "sensitive") 
   $cred_hash = to_object(@cred)
   $cred_value = $cred_hash["details"][0]["value"]
-  aws_secret_access_key = $cred_value
+  $aws_secret_access_key = $cred_value
   
   @elb = elb.load_balancer.create({
     name: @raw_elb.name,
