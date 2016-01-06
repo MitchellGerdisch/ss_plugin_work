@@ -24,11 +24,11 @@ module V1
         attribute :preferred_backup_window, Attributor::String
         attribute :preferred_maintenance_window, Attributor::String
         attribute :deletion_policy, Attributor::String
-        attribute :publicly_accessible, Attribute::String
-        attribute :storage_encrypted, Attribute::String
-        attribute :storage_type, Attribute::String
+        attribute :publicly_accessible, Attributor::String
+        attribute :storage_encrypted, Attributor::String
+        attribute :storage_type, Attributor::String
         attribute :vpc_secgroups, Attributor::Collection.of(String)
-        attribute :subnet_group_name, Attribute::String
+        attribute :subnet_group_name, Attributor::String
         attribute :tags, Attributor::Collection.of(String)
         attribute :aws_creds, Attributor::Collection.of(String)
 
@@ -45,9 +45,9 @@ module V1
         attribute :engine_version, Attributor::String
         attribute :multi_az, Attributor::String
         attribute :port, Attributor::Integer
-        attribute :storage_type, Attribute::String
+        attribute :storage_type, Attributor::String
         attribute :vpc_secgroups, Attributor::Collection.of(String)
-        attribute :subnet_group_name, Attribute::String
+        attribute :subnet_group_name, Attributor::String
         attribute :tags, Attributor::Collection.of(String)
       end
 
