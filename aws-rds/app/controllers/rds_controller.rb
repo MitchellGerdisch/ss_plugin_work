@@ -25,7 +25,7 @@ module V1
         end
 
         response = Praxis::Responses::Ok.new()
-        response.body = JSON.pretty_generate(instances)
+        response.body = JSON.pretty_generate(db_instances)
         response.headers['Content-Type'] = 'application/json'
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
