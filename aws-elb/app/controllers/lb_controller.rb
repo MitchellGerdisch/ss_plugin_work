@@ -107,7 +107,7 @@ module V1
         listeners: api_lb_listeners,
         scheme: request.payload.scheme,
       }
-#      app.logger.info("api_lb_params: "+api_lb_params.to_s)
+      app.logger.info("api_lb_params: "+api_lb_params.to_s)
       
       begin
         # create the ELB
@@ -122,7 +122,7 @@ module V1
         resp_body["load_balancer_name"] = request.payload.name
         resp_body["href"] = "/elb/load_balancers/" + request.payload.name
           
-#        app.logger.info("resp_body: "+resp_body.to_s)
+        app.logger.info("resp_body: "+resp_body.to_s)
 
         response = Praxis::Responses::Created.new()
         response.headers['Location'] = resp_body["href"]
