@@ -285,17 +285,17 @@ module V1
         response.body = { error: e.inspect }
       end
       
-      lb_policy_params = {
-        load_balancer_name: id,
-        policy_name: id+"-stickiness-policy"
-      }
-      
-      begin
-        lb_policy_response = elb.delete_load_balancer_policy(lb_policy_params)        
-      rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
-        response = Praxis::Responses::BadRequest.new()
-        response.body = { error: e.inspect }
-      end
+#      lb_policy_params = {
+#        load_balancer_name: id,
+#        policy_name: id+"-stickiness-policy"
+#      }
+#      
+#      begin
+#        lb_policy_response = elb.delete_load_balancer_policy(lb_policy_params)        
+#      rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+#        response = Praxis::Responses::BadRequest.new()
+#        response.body = { error: e.inspect }
+#      end
 
       response
     end
