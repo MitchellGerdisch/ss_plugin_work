@@ -12,6 +12,13 @@ module V1
         attribute :subnets, Attributor::Collection.of(String)
         attribute :secgroups, Attributor::Collection.of(String)
         attribute :listeners, Attributor::Collection.of(Hash)
+          # Listener Hash Structure:
+          #    "listener_name" => string,
+          #     "lb_protocol" => protocol type (e.g. TCP, HTTP, HTTPS) ELB listens for
+          #     "lb_port" => port ELB listens on
+          #     "instance_protocol" => protocol type the back end instances are listening on and ELB forwards to
+          #     "instance_port" => port back end instances are listening on and ELB forwards to
+          #     "sticky" => true or false indicates whether or not to attach the stickiness policy defined below
         attribute :healthcheck do
           attribute :target, Attributor::String
           attribute :interval, Attributor::Integer
@@ -23,8 +30,8 @@ module V1
         attribute :connection_idle_timeout, Attributor::Integer
         attribute :cross_zone, Attributor::String
         attribute :scheme, Attributor::String
-        attribute :stickiness do
-          attribute :stickiness_type, Attributor::String, values: ['disabled','lb_cookie', 'app_cookie']
+        attribute :stickiness do # TO-DO support multiple stickiness policies
+          attribute :stickiness_type, Attributor::String, values: ['lb_cookie', 'app_cookie']
           attribute :lb_cookie_expiration, Attributor::String
           attribute :app_cookie_name, Attributor::String
         end

@@ -95,7 +95,7 @@ module V1
         	instance_protocol: listener["instance_protocol"],
         	instance_port: listener["instance_port"]
         }
-        api_lb_listeners << api_lb_listener
+        api_lb_listeners << api_lb_listener     
       end
             
       # Build params for the create      
@@ -138,6 +138,43 @@ module V1
         app.logger.info("error response body:"+response.body.to_s)
       end
       
+      if request.payload.key?(:stickiness)
+        api_stickiness_policy_params = {
+          load_balancer_name: lb_name,
+          policy_name: join([lb_name,"-stickiness-policy"]),
+          cookie_expiration_period: request.payload.stickiness.lb_cookie_expiration
+        }
+        begin
+          # create stickiness policy properties to the ELB
+          healthcheck_response = elb.create_lb_cookie_stickiness_policy(api_stickiness_policy_params)
+        rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
+               Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+          self.response = Praxis::Responses::BadRequest.new()
+          response.body = { error: e.inspect }
+        end
+        
+        # Now go through and see if any of the listeners need to be updated with the stickiness policy
+        listeners_hash_array = request.payload.listeners
+        listeners_hash_array.each do |listener|
+          if listener["sticky"] == "true"
+            api_listener_stickiness_policy = {
+              load_balancer_name: lb_name,
+              load_balancer_port: listener["lb_port"],
+              policy_names: [join([lb_name,"-stickiness-policy"])]
+            }
+            begin
+              # associate stickiness policy withe given listener
+              listener_sticky_response = elb.set_load_balancer_policies_of_listener(api_listener_stickiness_policy)
+            rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
+                   Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+              self.response = Praxis::Responses::BadRequest.new()
+              response.body = { error: e.inspect }
+            end
+         end
+       end
+      end
+   
+      
       # configure health check settings if those params were set
       if request.payload.key?(:healthcheck)  # Did the user specify healthcheck stuff? 
         
@@ -162,6 +199,8 @@ module V1
         end
         
       end
+      
+      # 
       
       if request.payload.key?(:cross_zone) || request.payload.key?(:connection_draining_timeout) # Did the user specify healthcheck stuff? 
         # build params for the other settings
@@ -241,6 +280,18 @@ module V1
 
       begin
         elb_response = elb.delete_load_balancer(lb_params)        
+      rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+        response = Praxis::Responses::BadRequest.new()
+        response.body = { error: e.inspect }
+      end
+      
+      lb_policy_params = {
+        load_balancer_name: id,
+        policy_name: join([id,"-stickiness-policy"])
+      }
+      
+      begin
+        lb_policy_response = elb.delete_load_balancer_policy(lb_policy_params)        
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
