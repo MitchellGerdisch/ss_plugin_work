@@ -141,7 +141,7 @@ module V1
       if request.payload.key?(:stickiness)
         api_stickiness_policy_params = {
           load_balancer_name: lb_name,
-          policy_name: join([lb_name,"-stickiness-policy"]),
+          policy_name: lb_name+"-stickiness-policy",
           cookie_expiration_period: request.payload.stickiness.lb_cookie_expiration
         }
         begin
@@ -160,7 +160,7 @@ module V1
             api_listener_stickiness_policy = {
               load_balancer_name: lb_name,
               load_balancer_port: listener["lb_port"],
-              policy_names: [join([lb_name,"-stickiness-policy"])]
+              policy_names: [lb_name+"-stickiness-policy"]
             }
             begin
               # associate stickiness policy withe given listener
@@ -287,7 +287,7 @@ module V1
       
       lb_policy_params = {
         load_balancer_name: id,
-        policy_name: join([id,"-stickiness-policy"])
+        policy_name: id+"-stickiness-policy"
       }
       
       begin
