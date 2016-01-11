@@ -133,9 +133,9 @@ module V1
 
       rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
              Aws::ElasticLoadBalancing::Errors::InvalidInput => e
-        self.response = Praxis::Responses::BadRequest.new()
+        response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
-#        app.logger.info("error response body:"+response.body.to_s)
+        app.logger.info("error response body:"+response.body.to_s)
       end
       
       # configure health check settings if those params were set
