@@ -138,7 +138,11 @@ module V1
         app.logger.info("error response body:"+response.body.to_s)
       end
       
+      app.logger.info("before stickiness block: ")
+
       if request.payload.key?(:stickiness)
+        app.logger.info("in stickiness block: ")
+
         api_stickiness_policy_params = {
           load_balancer_name: lb_name,
           policy_name: lb_name+"-stickiness-policy",
@@ -146,10 +150,10 @@ module V1
         }
         begin
           # create stickiness policy properties to the ELB
-          healthcheck_response = elb.create_lb_cookie_stickiness_policy(api_stickiness_policy_params)
+          sticky_policy_response = elb.create_lb_cookie_stickiness_policy(api_stickiness_policy_params)
         rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
                Aws::ElasticLoadBalancing::Errors::InvalidInput => e
-          self.response = Praxis::Responses::BadRequest.new()
+          response = Praxis::Responses::BadRequest.new()
           response.body = { error: e.inspect }
         end
         
@@ -157,6 +161,8 @@ module V1
         listeners_hash_array = request.payload.listeners
         listeners_hash_array.each do |listener|
           if listener["sticky"] == "true"
+            app.logger.info("found sticky listener: "+listener["lb_port"].to_s)
+
             api_listener_stickiness_policy = {
               load_balancer_name: lb_name,
               load_balancer_port: listener["lb_port"],
