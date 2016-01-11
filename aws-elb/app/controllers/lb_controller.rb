@@ -160,6 +160,8 @@ module V1
         # Now go through and see if any of the listeners need to be updated with the stickiness policy
         listeners_hash_array = request.payload.listeners
         listeners_hash_array.each do |listener|
+          app.logger.info("found listener: "+listener["lb_port"].to_s)
+
           if listener["sticky"] == "true"
             app.logger.info("found sticky listener: "+listener["lb_port"].to_s)
 
