@@ -50,7 +50,8 @@ module V1
         
         resp_body = {}
         resp_body["instance_name"] = rds_desc["instance_name"]
-        resp_body["lb_dns_name"] = lb_desc["dns_name"] 
+        resp_body["instance_endpoint_address"] = rds_desc["endpoint.address"] 
+        resp_body["instance_endpoint_port"] = rds_desc["endpoint.port"]
         resp_body["href"] = "/rds/instances/" + id
 
         response = Praxis::Responses::Ok.new()
