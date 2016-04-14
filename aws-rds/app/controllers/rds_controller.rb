@@ -12,20 +12,20 @@ module V1
       rds = V1::Helpers::Aws.get_rds_client
 
       begin
-        db_instances = []
+        my_db_instances = []
         list_rds_response = rds.describe_db_instances
 
         list_rds_response.db_instances.each do |db_instance|
-          db_instances << { 
+          my_db_instances << { 
             "db_instance_id": db_instance.db_instance_identifier,
             "db_name": db_instance["db_name"],
-            "db_fqdn": db_instance["endpoint"]["address"],
-            "db_port": db_instance["endpoint"]["port"]
+            "db_fqdn": db_instance.endpoint["address"],
+            "db_port": db_instance.endpoint["port"]
           }
         end
 
         response = Praxis::Responses::Ok.new()
-        response.body = JSON.pretty_generate(db_instances)
+        response.body = JSON.pretty_generate(my_db_instances)
         response.headers['Content-Type'] = 'application/json'
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
