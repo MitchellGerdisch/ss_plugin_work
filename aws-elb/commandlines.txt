@@ -1,0 +1,6 @@
+##### list ELBs
+curl -i https://184.73.90.169:8443/elb/load_balancers -H 'X-Api-Version: 1.0' -H 'X_Api_Shared_Secret: 12345' -X GET --insecure
+##### Create ELB - DOESN'T WORK - THE CREDS DON'T GET PASSED CORRECTLY IN THE CURL - The CAT works though
+curl --insecure -i https://184.73.90.169:8443/elb/load_balancers -H 'X-Api-Version: 1.0' -H 'X_Api_Shared_Secret: 12345' -H 'Content-Type:appliation/json' -X POST -d '{"name":"elb-mitch-plugin-cred","listeners":[{"lb_protocol":"HTTP","lb_port":"8888", "instance_protocol":"HTTP","instance_port":"9999"}],"availability_zones":["us-east-1a"], "aws_creds":["SECRET_KEY"]}'
+##### Delete ELB
+curl -i http://localhost:8888/load_balancer/ID -H 'X-Api-Version: 1.0' -H 'X_Api_Shared_Secret: 12345' -X DELETE

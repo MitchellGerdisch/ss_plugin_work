@@ -40,16 +40,16 @@ module V1
       
       rds = V1::Helpers::Aws.get_rds_client
       
-      lb_params = {
+      rds_params = {
         instance_names: [id],
       }
 
       begin
-        rds_response = rds.describe_instances(lb_params)  
-        lb_desc = rds_response.instance_descriptions[0]
+        rds_response = rds.describe_instances(rds_params)  
+        rds_desc = rds_response.instance_descriptions[0]
         
         resp_body = {}
-        resp_body["instance_name"] = lb_desc["instance_name"]
+        resp_body["instance_name"] = rds_desc["instance_name"]
         resp_body["lb_dns_name"] = lb_desc["dns_name"] 
         resp_body["href"] = "/rds/instances/" + id
 
