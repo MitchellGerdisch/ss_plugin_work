@@ -18,9 +18,9 @@ module V1
         list_rds_response.db_instances.each do |db_instance|
           db_instances << { 
             "db_instance_id": db_instance.db_instance_identifier,
-            "db_name": db_instance.db_name,
-            "db_fqdn": db_instance.endpoint.address,
-            "db_port": db_instance.endpoint.port
+            "db_name": db_instance.["db_name"],
+            "db_fqdn": db_instance.["endpoint"]["address"],
+            "db_port": db_instance.["endpoint"]["port"]
           }
         end
 
