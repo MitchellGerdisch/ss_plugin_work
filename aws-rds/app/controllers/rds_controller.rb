@@ -45,7 +45,7 @@ module V1
       }
 
       begin
-        rds_response = rds.describe_instances(rds_params)  
+        rds_response = rds.describe_db_instances(rds_params)  
         rds_desc = rds_response.instance_descriptions[0]
         
         resp_body = {}
