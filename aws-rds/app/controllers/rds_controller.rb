@@ -49,7 +49,7 @@ module V1
         rds_desc = rds_response.db_instances[0]
         
         resp_body = {}
-        resp_body["instance_name"] = rds_desc["instance_name"]
+        resp_body["instance_name"] = rds_desc["db_instance_identifier"]
         resp_body["instance_endpoint_address"] = rds_desc["endpoint.address"] 
         resp_body["instance_endpoint_port"] = rds_desc["endpoint.port"]
         resp_body["href"] = "/rds/instances/" + id
