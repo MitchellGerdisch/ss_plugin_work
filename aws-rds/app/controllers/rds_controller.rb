@@ -41,7 +41,7 @@ module V1
       rds = V1::Helpers::Aws.get_rds_client
       
       rds_params = {
-        db_instance_identifier: [id],
+        db_instance_identifier: id,
       }
 
       begin
