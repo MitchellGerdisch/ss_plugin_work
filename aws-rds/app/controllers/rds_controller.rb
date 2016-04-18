@@ -66,7 +66,7 @@ module V1
         
         resp_body = {}
         resp_body["db_instance_name"] = rds_desc["db_instance_identifier"]
-        resp_body["db_name"] = rds_desc["db_name"],
+        resp_body["db_name"] = rds_desc["db_name"]
         # The endpoint may not be defined yet if the instance is still creating.
         resp_body["db_instance_endpoint_address"] =  "not available yet"
         resp_body["db_instance_endpoint_port"] = "not available yet"
