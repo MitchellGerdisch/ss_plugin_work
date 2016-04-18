@@ -136,7 +136,7 @@ module V1
 
         create_rds_response = rds.create_db_instance(api_params)
   
-        Praxis::Application.instance.logger.info "RDS Create response"+create_rds_response.to_s
+        Praxis::Application.instance.logger.info "RDS Create response"+create_rds_response.inspect
        
         # Build the response returned from the plugin service.
         # If there was a problem with calling AWS, it will be replaced by the error response.
@@ -186,8 +186,11 @@ module V1
       response = Praxis::Responses::NoContent.new()
 
       begin
-        rds_response = rds.delete_db_instance(rds_params)        
+        rds_response = rds.delete_db_instance(rds_params)     
+        Praxis::Application.instance.logger.info "AWS Delete response: "+rds_reponse.inspect
+   
       rescue Aws::RDS::Errors::InvalidDBInstanceState,
+             Aws::RDS::Errors::DBInstanceNotFound,
              Aws::RDS::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
