@@ -17,7 +17,7 @@ module V1
 
       action :show do
         routing do
-          get '/:id'
+          get '/:instance_id'
         end
         params do
           attribute :id, required: true
@@ -47,7 +47,7 @@ module V1
 
       action :delete do
         routing do
-          delete '/:id'
+          delete '/:instance_id'
         end
         params do
           attribute :id, String, required: true
