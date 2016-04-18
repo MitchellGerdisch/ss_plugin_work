@@ -27,7 +27,7 @@ module V1
         response = Praxis::Responses::Ok.new()
         response.body = JSON.pretty_generate(my_db_instances)
         response.headers['Content-Type'] = 'application/json'
-      rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+      rescue Aws::RDS::Errors::ResourceNotFoundFault => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
       end
@@ -58,11 +58,11 @@ module V1
         response.headers['Content-Type'] = 'application/json'
         response.body = resp_body
 #        app.logger.info("success during show - response body: "+response.body.to_s)
-      rescue  Aws::ElasticLoadBalancing::Errors::LoadBalancerNotFound => e
+      rescue  Aws::RDS::Errors::DBInstanceNotFoundFault => e
         response = Praxis::Responses::NotFound.new()
 #        app.logger.info("rds not found during show: "+e.inspect.to_s)
-      rescue  Aws::ElasticLoadBalancing::Errors::AccessPointNotFoundException,
-              Aws::ElasticLoadBalancing::Errors::InvalidEndPointException => e
+      rescue  Aws::RDS::Errors::InvalidDBInstanceStateFault,
+              Aws::RDS::Errors::DBInstanceAlreadyExistsFault => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
 #        app.logger.info("error during show - response body: "+response.body.to_s)
@@ -87,21 +87,6 @@ module V1
       end
       
       rds = V1::Helpers::Aws.get_rds_client
-      
-      lb_name = request.payload.name
-      
-      # transfer the specs from the received API to the required format for the AWS RDS call
-      api_lb_listeners = []
-      listeners_hash_array = request.payload.listeners
-      listeners_hash_array.each do |listener|
-        api_lb_listener = {
-        	protocol: listener["lb_protocol"],
-        	instance_port: listener["lb_port"],
-        	instance_protocol: listener["instance_protocol"],
-        	instance_port: listener["instance_port"]
-        }
-        api_lb_listeners << api_lb_listener
-      end
             
       # Build params for the create      
       api_params = {
@@ -109,68 +94,26 @@ module V1
         db_instance_identifier: request.payload.instance_id,
         allocated_storage: request.payload.allocated_storage,
         db_instance_class: request.payload.instance_class,
-        engine: request.payload.engine,
+        engine: request.payload.engine, # MySQL
         master_username: request.payload.master_username,
         master_user_password: request.payload.master_password,
-        db_security_groups: ["String"],
-        vpc_security_group_ids: ["String"],
-        availability_zone: "String",
-        db_subnet_group_name: "String",
-        preferred_maintenance_window: "String",
-        db_parameter_group_name: "String",
-        backup_retention_period: 1,
-        preferred_backup_window: "String",
-        port: 1,
-        multi_az: true,
-        engine_version: "String",
-        auto_minor_version_upgrade: true,
-        license_model: "String",
-        iops: 1,
-        option_group_name: "String",
-        character_set_name: "String",
-        publicly_accessible: true,
-        tags: [
-          {
-            key: "String",
-            value: "String",
-          },
-        ],
-        db_cluster_identifier: "String",
-        storage_type: "String",
-        tde_credential_arn: "String",
-        tde_credential_password: "String",
-        storage_encrypted: true,
-        kms_key_id: "String",
-        domain: "String",
-        copy_tags_to_snapshot: true,
-        monitoring_interval: 1,
-        monitoring_role_arn: "String",
-        domain_iam_role_name: "String",
-        promotion_tier: 1,
-        
-        
-        
-        
-        instance_name: lb_name,
-        subnets: request.payload.subnets,
-        security_groups: request.payload.secgroups,
-        availability_zones: request.payload.availability_zones,
-        listeners: api_lb_listeners,
-        scheme: request.payload.scheme,
+        multi_az: false
       }
 #      app.logger.info("api_lb_params: "+api_lb_params.to_s)
       
       begin
         # create the RDS
-        create_lb_response = rds.create_instance(api_lb_params)
+        create_rds_response = rds.create_db_instance(api_lb_params)
   
 #        app.logger.info("lb create response: "+create_lb_response["dns_name"].to_s)
        
         # Build the response returned from the plugin service.
         # If there was a problem with calling AWS, it will be replaced by the error response.
         resp_body = {}
-        resp_body["lb_dns_name"] = create_lb_response["dns_name"]
-        resp_body["instance_name"] = request.payload.name
+          
+        resp_body["rds_instance_name"] = request.payload.name
+        resp_body["rds_endpoint_address"] = create_rds_response["endpoint"]["address"]
+        resp_body["rds_endpoint_port"] = create_rds_response["endpoint"]["port"]
         resp_body["href"] = "/rds/instances/" + request.payload.name
           
 #        app.logger.info("resp_body: "+resp_body.to_s)
@@ -182,8 +125,8 @@ module V1
 #        app.logger.info("success case - response header: "+response.headers.to_s)
 #        app.logger.info("success case - response body: "+response.body.to_s)
 
-      rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
-             Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+      rescue Aws::RDS::Errors::ValidationError,
+             Aws::RDS::Errors::InvalidInput => e
         self.response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
 #        app.logger.info("error response body:"+response.body.to_s)
@@ -206,8 +149,8 @@ module V1
         begin
           # add healthcheck properties to the RDS
           healthcheck_response = rds.configure_health_check(api_healthcheck_params)
-        rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
-               Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+        rescue Aws::RDS::Errors::ValidationError,
+               Aws::RDS::Errors::InvalidInput => e
           self.response = Praxis::Responses::BadRequest.new()
           response.body = { error: e.inspect }
         end
@@ -235,8 +178,8 @@ module V1
         begin
           # add other RDS attributes if provided
           attributes_response = rds.modify_instance_attributes(api_modify_lb_attributes_params)
-        rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
-                 Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+        rescue Aws::RDS::Errors::ValidationError,
+                 Aws::RDS::Errors::InvalidInput => e
             self.response = Praxis::Responses::BadRequest.new()
             response.body = { error: e.inspect }
         end
@@ -264,8 +207,8 @@ module V1
         begin
           # add tags
           tagging_response = rds.add_tags(api_add_tags_params)
-        rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
-                 Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+        rescue Aws::RDS::Errors::ValidationError,
+                 Aws::RDS::Errors::InvalidInput => e
             self.response = Praxis::Responses::BadRequest.new()
             response.body = { error: e.inspect }
         end
@@ -293,10 +236,13 @@ module V1
 
       begin
         rds_response = rds.delete_db_instance(rds_params)        
-      rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
+      rescue Aws::RDS::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
       end
+      
+      # TODO: Put in some looping to wait until fully deleted before returning since it can take a few minutes for the RDS
+      # instance to be deleted. Currently the CAT will have to do this.
 
       response
     end
