@@ -158,7 +158,7 @@ module V1
       rescue Aws::RDS::Errors::ValidationError,
              Aws::RDS::Errors::DBInstanceAlreadyExists,
              Aws::RDS::Errors::InvalidInput => e
-        self.response = Praxis::Responses::BadRequest.new()
+        response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
 #        app.logger.info("error response body:"+response.body.to_s)
       end
