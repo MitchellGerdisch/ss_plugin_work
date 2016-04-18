@@ -156,6 +156,7 @@ module V1
 #        app.logger.info("success case - response body: "+response.body.to_s)
 
       rescue Aws::RDS::Errors::ValidationError,
+             Aws::RDS::Errors::DBInstanceAlreadyExists,
              Aws::RDS::Errors::InvalidInput => e
         self.response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
