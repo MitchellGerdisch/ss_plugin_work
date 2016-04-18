@@ -286,6 +286,7 @@ module V1
       
       rds_params = {
         db_instance_identifier: id,
+        skip_final_snapshot: true
       }
 
       response = Praxis::Responses::NoContent.new()
