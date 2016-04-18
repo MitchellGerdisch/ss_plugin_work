@@ -170,8 +170,6 @@ module V1
 
       response
 
-      Praxis::Application.instance.logger.info "After RDS Create response return"
-
     end
     
     def delete(instance_id:, **params)
