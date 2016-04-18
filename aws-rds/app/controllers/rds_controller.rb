@@ -291,7 +291,7 @@ module V1
       response = Praxis::Responses::NoContent.new()
 
       begin
-        rds_response = rds.delete_instance(rds_params)        
+        rds_response = rds.delete_db_instance(rds_params)        
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
