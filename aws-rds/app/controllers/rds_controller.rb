@@ -22,12 +22,20 @@ module V1
 
         list_rds_response.db_instances.each do |db_instance|
           Praxis::Application.instance.logger.info "db_instance from AWS: "+db_instance.to_s
-
+          
+          # The endpoint may not be defined yet if the instance is still creating.
+          db_endpoint = "not available yet"
+          db_port = "not available yet"
+          if db_instance.endpoint
+            db_endpoint = db_instance.endpoint["address"]
+            db_port = db_instance.endpoint["port"]
+          end
+          
           my_db_instances << { 
             "db_instance_id": db_instance.db_instance_identifier,
             "db_name": db_instance["db_name"],
-            "db_fqdn": db_instance.endpoint["address"],
-            "db_port": db_instance.endpoint["port"],
+            "db_fqdn": db_endpoint,
+            "db_port": db_port,
             "db_status": db_instance["db_instance_status"]
           }
         end
