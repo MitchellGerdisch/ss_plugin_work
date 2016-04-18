@@ -36,7 +36,7 @@ module V1
             "db_name": db_instance["db_name"],
             "db_fqdn": db_endpoint,
             "db_port": db_port,
-            "db_status": db_instance["db_instance_status"]
+            "db_instance_status": db_instance["db_instance_status"]
           }
         end
 
@@ -65,9 +65,16 @@ module V1
         rds_desc = rds_response.db_instances[0]
         
         resp_body = {}
-        resp_body["instance_name"] = rds_desc["db_instance_identifier"]
-        resp_body["instance_endpoint_address"] = rds_desc["endpoint"]["address"] 
-        resp_body["instance_endpoint_port"] = rds_desc["endpoint"]["port"]
+        resp_body["db_instance_name"] = rds_desc["db_instance_identifier"]
+        resp_body["db_name"] = rds_desc["db_name"],
+        # The endpoint may not be defined yet if the instance is still creating.
+        resp_body["db_instance_endpoint_address"] =  "not available yet"
+        resp_body["db_instance_endpoint_port"] = "not available yet"
+        if db_instance.endpoint
+          resp_body["db_instance_endpoint_address"] = rds_desc["endpoint"]["address"] 
+          resp_body["db_instance_endpoint_port"] = rds_desc["endpoint"]["port"]
+        end
+        resp_body["db_instance_status"] = rds_desc["db_instance_status"]
         resp_body["href"] = "/rds/instances/" + instance_id
 
         response = Praxis::Responses::Ok.new()
