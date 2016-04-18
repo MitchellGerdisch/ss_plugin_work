@@ -51,13 +51,13 @@ module V1
       response
     end
     
-    def show(id:, **params)
+    def show(instance_id:, **params)
       app = Praxis::Application.instance
       
       rds = V1::Helpers::Aws.get_rds_client
       
       rds_params = {
-        db_instance_identifier: id,
+        db_instance_identifier: instance_id,
       }
 
       begin
@@ -68,7 +68,7 @@ module V1
         resp_body["instance_name"] = rds_desc["db_instance_identifier"]
         resp_body["instance_endpoint_address"] = rds_desc["endpoint"]["address"] 
         resp_body["instance_endpoint_port"] = rds_desc["endpoint"]["port"]
-        resp_body["href"] = "/rds/instances/" + id
+        resp_body["href"] = "/rds/instances/" + instance_id
 
         response = Praxis::Responses::Ok.new()
         response.headers['Content-Type'] = 'application/json'
@@ -167,13 +167,13 @@ module V1
 
     end
     
-    def delete(id:, **params)
+    def delete(instance_id:, **params)
       app = Praxis::Application.instance
       
       rds = V1::Helpers::Aws.get_rds_client
       
       rds_params = {
-        db_instance_identifier: id,
+        db_instance_identifier: instance_id,
         skip_final_snapshot: true
       }
 
