@@ -9,10 +9,14 @@ module V1
     app = Praxis::Application.instance
 
     def index(**params)
+      
+      Praxis::Application.instance.logger.info "In index function"
       rds = V1::Helpers::Aws.get_rds_client
+      Praxis::Application.instance.logger.info "After AWS API call"
+
 
       begin
-        Praxis::Application.instance.logger.error "Testing logging"
+        Praxis::Application.instance.logger.info "In AWS response processing section"
         my_db_instances = []
         list_rds_response = rds.describe_db_instances
 
@@ -78,8 +82,11 @@ module V1
     def create(**params)
       app = Praxis::Application.instance
       
+      Praxis::Application.instance.logger.info "In RDS create section"
+      
       # NOTE THE ASSUMPTION IS THAT HTTPS IS BEING USED SO KEYS ARE NOT SNIFFABLE
       if request.payload.aws_creds
+        Praxis::Application.instance.logger.info "Found AWS creds in request"
         aws_access_key_id = request.payload.aws_creds[0]
         aws_secret_access_key = request.payload.aws_creds[1]
         # Place them in the environment so they can be used for the AWS calls
@@ -87,7 +94,10 @@ module V1
         ENV['AWS_SECRET_ACCESS_KEY'] = aws_secret_access_key
       end
       
+      Praxis::Application.instance.logger.info "Before AWS RDS Create API call"
       rds = V1::Helpers::Aws.get_rds_client
+      Praxis::Application.instance.logger.info "After AWS RDS Create API call"
+
             
       # Build params for the create      
       api_params = {
@@ -104,7 +114,7 @@ module V1
       
       begin
         # create the RDS
-        Praxis::Application.instance.logger.error "api_params: "+api_params.to_s
+        Praxis::Application.instance.logger.info "RDS api_params: "+api_params.to_s
 
         create_rds_response = rds.create_db_instance(api_params)
   
@@ -134,95 +144,17 @@ module V1
         response.body = { error: e.inspect }
 #        app.logger.info("error response body:"+response.body.to_s)
       end
-      
-      # configure health check settings if those params were set
-      if request.payload.key?(:healthcheck)  # Did the user specify healthcheck stuff? 
-        
-        api_healthcheck_params = {
-          instance_name: lb_name,
-          health_check: {
-            target: request.payload.healthcheck.target,
-            interval: request.payload.healthcheck.interval,
-            timeout: request.payload.healthcheck.timeout,
-            unhealthy_threshold: request.payload.healthcheck.unhealthy_threshold,
-            healthy_threshold: request.payload.healthcheck.healthy_threshold
-          }
-        }
-        
-        begin
-          # add healthcheck properties to the RDS
-          healthcheck_response = rds.configure_health_check(api_healthcheck_params)
-        rescue Aws::RDS::Errors::ValidationError,
-               Aws::RDS::Errors::InvalidInput => e
-          self.response = Praxis::Responses::BadRequest.new()
-          response.body = { error: e.inspect }
-        end
-        
-      end
-      
-      if request.payload.key?(:cross_zone) || request.payload.key?(:connection_draining_timeout) # Did the user specify healthcheck stuff? 
-        # build params for the other settings
-        api_modify_lb_attributes_params = {
-          instance_name: lb_name,
-          instance_attributes: {
-            cross_zone_load_balancing: {
-              enabled: request.payload.cross_zone
-            },
-            connection_draining: {
-              enabled: request.payload.key?(:connection_draining_timeout) ? true : false,
-              timeout: request.payload.connection_draining_timeout
-            },
-            connection_settings: {
-              idle_timeout: request.payload.connection_idle_timeout
-            }
-          }
-        }
-        
-        begin
-          # add other RDS attributes if provided
-          attributes_response = rds.modify_instance_attributes(api_modify_lb_attributes_params)
-        rescue Aws::RDS::Errors::ValidationError,
-                 Aws::RDS::Errors::InvalidInput => e
-            self.response = Praxis::Responses::BadRequest.new()
-            response.body = { error: e.inspect }
-        end
-      end
-      
-      # build params for the tags
-      if request.payload.key?(:tags)  # Did the user specify tags stuff?
-        api_tags = []
-        tags_array = request.payload.tags
-        tags_array.each do |tag|
-          split_tag = tag.split(":")
-          keyname = split_tag[0]
-          val = split_tag.drop(1).join(":")  # need to account for the possibility that the tag value has colons. This drops the first value which should be the key and then puts things back if they were split above
-          api_tag = {
-            key: keyname,
-            value: val
-          }
-          api_tags << api_tag
-        end
-        api_add_tags_params = {
-          instance_names: [lb_name],
-          tags: api_tags
-        }
-      
-        begin
-          # add tags
-          tagging_response = rds.add_tags(api_add_tags_params)
-        rescue Aws::RDS::Errors::ValidationError,
-                 Aws::RDS::Errors::InvalidInput => e
-            self.response = Praxis::Responses::BadRequest.new()
-            response.body = { error: e.inspect }
-        end
-      end
-      
       # TO-DO: remove (backout) the RDS if there was a problem with a subsequent call (e.g. the health check config fails)
        
 #      app.logger.info("departing response header: "+response.headers.to_s)
 #      app.logger.info("departing response body: "+response.body.to_s)
 
+      Praxis::Application.instance.logger.info "Before RDS Create response return"
+
       response
+
+      Praxis::Application.instance.logger.info "After RDS Create response return"
+
     end
     
     def delete(id:, **params)
