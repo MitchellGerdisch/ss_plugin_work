@@ -20,7 +20,7 @@ module V1
           get '/:instance_id'
         end
         params do
-          attribute :id, required: true
+          attribute :instance_id, required: true
         end
         response :ok
         response :not_found
@@ -50,7 +50,7 @@ module V1
           delete '/:instance_id'
         end
         params do
-          attribute :id, String, required: true
+          attribute :instance_id, String, required: true
         end
         response :no_content
         response :bad_request
