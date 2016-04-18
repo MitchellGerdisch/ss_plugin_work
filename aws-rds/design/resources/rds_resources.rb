@@ -37,24 +37,8 @@ module V1
           attribute :instance_class, required: true
           attribute :engine, required: true
           attribute :allocated_storage, required: true
-#          attribute :major_version_upgrade
-#          attribute :minor_version_upgrade
-#          attribute :backup_retention_period
-#          attribute :engine_version
-#          attribute :license_model
           attribute :master_username, required: true
           attribute :master_user_password, required: true
-#          attribute :multi_az
-#          attribute :port
-#          attribute :preferred_backup_window
-#          attribute :preferred_maintenance_window
-#          attribute :deletion_policy
-#          attribute :publicly_accessible
-#          attribute :storage_encrypted
-#          attribute :storage_type
-#          attribute :vpc_secgroups
-#          attribute :subnet_group_name
-#          attribute :tags
           attribute :aws_creds
         end
         response :created
