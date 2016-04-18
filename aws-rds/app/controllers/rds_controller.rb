@@ -187,7 +187,7 @@ module V1
 
       begin
         rds_response = rds.delete_db_instance(rds_params)     
-        Praxis::Application.instance.logger.info "AWS Delete response: "+rds_reponse.inspect
+        Praxis::Application.instance.logger.info "AWS Delete response: "+rds_response.inspect
    
       rescue Aws::RDS::Errors::InvalidDBInstanceState,
              Aws::RDS::Errors::DBInstanceNotFound,
