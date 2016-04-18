@@ -17,9 +17,8 @@ module V1
       end
 
       view :default do
-        attribute :id, Attributor::String
         attribute :href, Attributor::String
-        attribute :name, Attributor::String
+        attribute :db_name, Attributor::String
         attribute :allocated_storage, Attributor::Integer
         attribute :instance_class, Attributor::String
         attribute :instance_id, Attributor::String
