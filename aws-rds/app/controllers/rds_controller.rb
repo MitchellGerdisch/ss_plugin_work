@@ -21,7 +21,7 @@ module V1
         list_rds_response = rds.describe_db_instances
 
         list_rds_response.db_instances.each do |db_instance|
-#          Praxis::Application.instance.logger.info "db_instance from AWS: "+db_instance.to_s
+          Praxis::Application.instance.logger.info "db_instance from AWS: "+db_instance.to_s
 
           my_db_instances << { 
             "db_instance_id": db_instance.db_instance_identifier,
