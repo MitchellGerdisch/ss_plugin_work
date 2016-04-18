@@ -12,6 +12,7 @@ module V1
       rds = V1::Helpers::Aws.get_rds_client
 
       begin
+        Praxis::Application.instance.logger.error "Testing logging"
         my_db_instances = []
         list_rds_response = rds.describe_db_instances
 
