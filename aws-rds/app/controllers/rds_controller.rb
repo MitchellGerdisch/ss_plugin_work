@@ -70,7 +70,7 @@ module V1
         # The endpoint may not be defined yet if the instance is still creating.
         resp_body["db_instance_endpoint_address"] =  "not available yet"
         resp_body["db_instance_endpoint_port"] = "not available yet"
-        if db_instance.endpoint
+        if rds_desc.endpoint
           resp_body["db_instance_endpoint_address"] = rds_desc["endpoint"]["address"] 
           resp_body["db_instance_endpoint_port"] = rds_desc["endpoint"]["port"]
         end
