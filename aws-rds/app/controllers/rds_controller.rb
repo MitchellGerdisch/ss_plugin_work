@@ -78,17 +78,19 @@ module V1
       app = Praxis::Application.instance
       
       # NOTE THE ASSUMPTION IS THAT HTTPS IS BEING USED SO KEYS ARE NOT SNIFFABLE
-      aws_access_key_id = request.payload.aws_creds[0]
-      aws_secret_access_key = request.payload.aws_creds[1]
-      # Place them in the environment so they can be used for the AWS calls
-      ENV['AWS_ACCESS_KEY_ID'] = aws_access_key_id
-      ENV['AWS_SECRET_ACCESS_KEY'] = aws_secret_access_key
+      if request.payload.aws_creds
+        aws_access_key_id = request.payload.aws_creds[0]
+        aws_secret_access_key = request.payload.aws_creds[1]
+        # Place them in the environment so they can be used for the AWS calls
+        ENV['AWS_ACCESS_KEY_ID'] = aws_access_key_id
+        ENV['AWS_SECRET_ACCESS_KEY'] = aws_secret_access_key
+      end
       
       rds = V1::Helpers::Aws.get_rds_client
       
       lb_name = request.payload.name
       
-      # transfer the listener specs from the received API to the required format for the AWS RDS call
+      # transfer the specs from the received API to the required format for the AWS RDS call
       api_lb_listeners = []
       listeners_hash_array = request.payload.listeners
       listeners_hash_array.each do |listener|
@@ -102,7 +104,53 @@ module V1
       end
             
       # Build params for the create      
-      api_lb_params = {
+      api_params = {
+        db_name: request.payload.db_name,
+        db_instance_identifier: request.payload.instance_id,
+        allocated_storage: request.payload.allocated_storage,
+        db_instance_class: request.payload.instance_class,
+        engine: request.payload.engine,
+        master_username: request.payload.master_username,
+        master_user_password: request.payload.master_password,
+        db_security_groups: ["String"],
+        vpc_security_group_ids: ["String"],
+        availability_zone: "String",
+        db_subnet_group_name: "String",
+        preferred_maintenance_window: "String",
+        db_parameter_group_name: "String",
+        backup_retention_period: 1,
+        preferred_backup_window: "String",
+        port: 1,
+        multi_az: true,
+        engine_version: "String",
+        auto_minor_version_upgrade: true,
+        license_model: "String",
+        iops: 1,
+        option_group_name: "String",
+        character_set_name: "String",
+        publicly_accessible: true,
+        tags: [
+          {
+            key: "String",
+            value: "String",
+          },
+        ],
+        db_cluster_identifier: "String",
+        storage_type: "String",
+        tde_credential_arn: "String",
+        tde_credential_password: "String",
+        storage_encrypted: true,
+        kms_key_id: "String",
+        domain: "String",
+        copy_tags_to_snapshot: true,
+        monitoring_interval: 1,
+        monitoring_role_arn: "String",
+        domain_iam_role_name: "String",
+        promotion_tier: 1,
+        
+        
+        
+        
         instance_name: lb_name,
         subnets: request.payload.subnets,
         security_groups: request.payload.secgroups,
@@ -236,14 +284,14 @@ module V1
       
       rds = V1::Helpers::Aws.get_rds_client
       
-      lb_params = {
-        instance_name: id,
+      rds_params = {
+        db_instance_identifier: id,
       }
 
       response = Praxis::Responses::NoContent.new()
 
       begin
-        rds_response = rds.delete_instance(lb_params)        
+        rds_response = rds.delete_instance(rds_params)        
       rescue Aws::ElasticLoadBalancing::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }

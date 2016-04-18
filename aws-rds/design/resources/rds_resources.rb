@@ -32,18 +32,18 @@ module V1
           post ''
         end
         payload do
-          attribute :name
+          attribute :db_name, required: true
           attribute :instance_id, required: true
           attribute :instance_class, required: true
           attribute :engine, required: true
-          attribute :allocated_storage
+          attribute :allocated_storage, required: true
           attribute :major_version_upgrade
           attribute :minor_version_upgrade
           attribute :backup_retention_period
           attribute :engine_version
           attribute :license_model
-          attribute :master_username
-          attribute :master_user_password
+          attribute :master_username, required: true
+          attribute :master_user_password, required: true
           attribute :multi_az
           attribute :port
           attribute :preferred_backup_window
