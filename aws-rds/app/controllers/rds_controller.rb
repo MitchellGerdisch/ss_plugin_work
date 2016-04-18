@@ -99,10 +99,12 @@ module V1
         master_user_password: request.payload.master_password,
         multi_az: false
       }
-      app.logger.info("api_params: "+api_params.to_s)
+#      app.logger.info("api_params: "+api_params.to_s)
       
       begin
         # create the RDS
+        app.logger.info("api_params: "+api_params.to_s)
+
         create_rds_response = rds.create_db_instance(api_params)
   
 #        app.logger.info("lb create response: "+create_lb_response["dns_name"].to_s)
