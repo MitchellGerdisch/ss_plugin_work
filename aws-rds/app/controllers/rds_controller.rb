@@ -118,7 +118,7 @@ module V1
 
         create_rds_response = rds.create_db_instance(api_params)
   
-#        app.logger.info("lb create response: "+create_lb_response["dns_name"].to_s)
+        Praxis::Application.instance.logger.info "RDS Create response"+create_rds_response.to_s
        
         # Build the response returned from the plugin service.
         # If there was a problem with calling AWS, it will be replaced by the error response.
