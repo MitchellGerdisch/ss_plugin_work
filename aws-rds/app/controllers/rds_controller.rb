@@ -81,11 +81,11 @@ module V1
         response.headers['Content-Type'] = 'application/json'
         response.body = resp_body
 #        app.logger.info("success during show - response body: "+response.body.to_s)
-      rescue  Aws::RDS::Errors::DBInstanceNotFoundFault => e
+      rescue  Aws::RDS::Errors::DBInstanceNotFound => e
         response = Praxis::Responses::NotFound.new()
 #        app.logger.info("rds not found during show: "+e.inspect.to_s)
-      rescue  Aws::RDS::Errors::InvalidDBInstanceStateFault,
-              Aws::RDS::Errors::DBInstanceAlreadyExistsFault => e
+      rescue  Aws::RDS::Errors::InvalidDBInstanceState,
+              Aws::RDS::Errors::DBInstanceAlreadyExists => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
 #        app.logger.info("error during show - response body: "+response.body.to_s)
@@ -186,7 +186,8 @@ module V1
 
       begin
         rds_response = rds.delete_db_instance(rds_params)        
-      rescue Aws::RDS::Errors::InvalidInput => e
+      rescue Aws::RDS::Errors::InvalidDBInstanceState,
+             Aws::RDS::Errors::InvalidInput => e
         response = Praxis::Responses::BadRequest.new()
         response.body = { error: e.inspect }
       end
