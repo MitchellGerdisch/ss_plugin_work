@@ -107,7 +107,7 @@ module V1
         db_instance_class: request.payload.instance_class,
         engine: request.payload.engine, # MySQL
         master_username: request.payload.master_username,
-        master_user_password: request.payload.master_password,
+        master_user_password: request.payload.master_user_password,
         multi_az: false
       }
 #      app.logger.info("api_params: "+api_params.to_s)
