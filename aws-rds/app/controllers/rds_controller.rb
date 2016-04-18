@@ -90,7 +90,7 @@ module V1
             
       # Build params for the create      
       api_params = {
-        db_name: request.payload.db_name.to_s,
+        db_name: request.payload.db_name,
         db_instance_identifier: request.payload.instance_id,
         allocated_storage: request.payload.allocated_storage,
         db_instance_class: request.payload.instance_class,
@@ -99,11 +99,11 @@ module V1
         master_user_password: request.payload.master_password,
         multi_az: false
       }
-      app.logger.info("api__params: "+api_params.to_s)
+      app.logger.info("api_params: "+api_params.to_s)
       
       begin
         # create the RDS
-        create_rds_response = rds.create_db_instance(api_lb_params)
+        create_rds_response = rds.create_db_instance(api_params)
   
 #        app.logger.info("lb create response: "+create_lb_response["dns_name"].to_s)
        
