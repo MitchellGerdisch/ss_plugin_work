@@ -144,7 +144,7 @@ module V1
           
         resp_body["rds_instance_name"] = request.payload.instance_id
         resp_body["rds_db_name"] = request.payload.db_name
-        resp_body["href"] = "/rds/instances/" + request.payload.name
+        resp_body["href"] = "/rds/instances/" + request.payload.instance_id
           
 #        app.logger.info("resp_body: "+resp_body.to_s)
 
