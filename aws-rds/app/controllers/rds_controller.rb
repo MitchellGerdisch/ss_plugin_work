@@ -90,7 +90,7 @@ module V1
             
       # Build params for the create      
       api_params = {
-        db_name: request.payload.db_name,
+        db_name: request.payload.db_name.to_s,
         db_instance_identifier: request.payload.instance_id,
         allocated_storage: request.payload.allocated_storage,
         db_instance_class: request.payload.instance_class,
