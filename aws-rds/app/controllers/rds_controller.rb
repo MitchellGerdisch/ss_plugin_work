@@ -99,7 +99,7 @@ module V1
         master_user_password: request.payload.master_password,
         multi_az: false
       }
-#      app.logger.info("api_lb_params: "+api_lb_params.to_s)
+      app.logger.info("api__params: "+api_params.to_s)
       
       begin
         # create the RDS
