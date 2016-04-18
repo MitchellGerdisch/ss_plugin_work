@@ -26,7 +26,7 @@ module V1
             "db_name": db_instance["db_name"],
             "db_fqdn": db_instance.endpoint["address"],
             "db_port": db_instance.endpoint["port"],
-            "status": status_infos[0]["status"]
+            "db_status": db_instance.status_infos[0]["status"]
           }
         end
 
