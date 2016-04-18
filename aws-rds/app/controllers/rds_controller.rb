@@ -103,7 +103,7 @@ module V1
       
       begin
         # create the RDS
-        app.logger.info("api_params: "+api_params.to_s)
+        Praxis::Application.instance.logger.error "api_params: "+api_params.to_s
 
         create_rds_response = rds.create_db_instance(api_params)
   
