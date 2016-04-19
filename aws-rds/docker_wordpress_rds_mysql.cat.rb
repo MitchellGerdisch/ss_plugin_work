@@ -6,7 +6,7 @@
 
 name 'WordPress Container with External RDS DB Server'
 rs_ca_ver 20131202
-short_description "![logo](https://s3.amazonaws.com/rs-pft/cat-logos/docker.png) ![logo](http://www.showslow.com/blog/wp-content/uploads/2013/05/amazon_rds_glossy.png)
+short_description "![logo](https://s3.amazonaws.com/rs-pft/cat-logos/docker.png) ![logo](https://s3.amazonaws.com/rs-pft/cat-logos/amazon_rds_glossy.png)
 
 WordPress Container with External RDS DB Server"
 
