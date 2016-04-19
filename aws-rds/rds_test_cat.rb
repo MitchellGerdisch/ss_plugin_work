@@ -62,8 +62,8 @@ end
 #########
 
 resource "rds", type: "rds.instance" do
-  name  "mitch-plugin-cat-1"
-  db_name  "mitch_db_plugin_cat_1"
+  name join(['rds-instance-',last(split(@@deployment.href,"/"))])
+  db_name  "rds_db"
 #  instance_id "mitch-plugin-cat-1"
   instance_class "db.m1.small"
   engine "MySQL"
@@ -138,7 +138,7 @@ define provision_db(@raw_rds) return @rds do
 
 end
 
-define delete_lb(@rds) do
+define delete_db(@rds) do
   @rds.destroy() # Calls .delete on the API resource
 end
 
