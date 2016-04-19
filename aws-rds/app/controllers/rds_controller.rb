@@ -115,35 +115,6 @@ module V1
 #      Praxis::Application.instance.logger.info "Before AWS RDS Create API call"
       rds = V1::Helpers::Aws.get_rds_client
 #      Praxis::Application.instance.logger.info "After AWS RDS Create API call"
-      
-      # build params for the tags
-      if request.payload.key?(:tags)  # Did the user specify tags stuff?
-        api_tags = []
-        tags_array = request.payload.tags
-        tags_array.each do |tag|
-          split_tag = tag.split(":")
-          keyname = split_tag[0]
-          val = split_tag.drop(1).join(":")  # need to account for the possibility that the tag value has colons. This drops the first value which should be the key and then puts things back if they were split above
-          api_tag = {
-            key: keyname,
-            value: val
-          }
-          api_tags << api_tag
-        end
-        api_add_tags_params = {
-          load_balancer_names: [lb_name],
-          tags: api_tags
-        }
-      
-        begin
-          # add tags
-          tagging_response = elb.add_tags(api_add_tags_params)
-        rescue Aws::ElasticLoadBalancing::Errors::ValidationError,
-                 Aws::ElasticLoadBalancing::Errors::InvalidInput => e
-            self.response = Praxis::Responses::BadRequest.new()
-            response.body = { error: e.inspect }
-        end
-      end
 
             
       # Build params for the create      
