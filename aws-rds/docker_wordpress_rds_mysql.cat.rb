@@ -3,11 +3,11 @@
 # Add code to set the WORDPRESS env variable to point at the PUBLIC IP of the MySQL server
 
 
-name 'WordPress Container with External DB Server'
+name 'WordPress Container with External RDS DB Server'
 rs_ca_ver 20131202
-short_description "![logo](https://s3.amazonaws.com/rs-pft/cat-logos/docker.png)
+short_description "![logo](https://s3.amazonaws.com/rs-pft/cat-logos/docker.png) (http://www.showslow.com/blog/wp-content/uploads/2013/05/amazon_rds_glossy.png)
 
-WordPress Container with External DB Server"
+WordPress Container with External RDS DB Server"
 
 output "wordpress_url" do
   label "WordPress Link"
@@ -39,47 +39,23 @@ resource 'wordpress_docker_server', type: 'server' do
     'SWAP_SIZE' => 'text:1',
   } end
 end
-resource 'db_server', type: 'server' do
-  name 'DB Server'
-  cloud 'EC2 us-east-1'
-  instance_type 'm3.medium'
-  multi_cloud_image find('RightImage_CentOS_6.6_x64_v14.2', revision: 24)
-  ssh_key_href @ssh_key
-  security_group_hrefs @sec_group
-  server_template find('Database Manager for MySQL (v14.1.1)', revision: 56)
-  inputs do {
-    'ephemeral_lvm/logical_volume_name' => 'text:ephemeral0',
-    'ephemeral_lvm/logical_volume_size' => 'text:100%VG',
-    'ephemeral_lvm/mount_point' => 'text:/mnt/ephemeral',
-    'ephemeral_lvm/stripe_size' => 'text:512',
-    'ephemeral_lvm/volume_group_name' => 'text:vg-data',
-    'rs-base/ntp/servers' => 'array:["text:time.rightscale.com","text:ec2-us-east.time.rightscale.com","text:ec2-us-west.time.rightscale.com"]',
-    'rs-base/swap/size' => 'text:1',
-    'rs-mysql/application_database_name' => 'text:app_test',
-    'rs-mysql/application_password' => 'text:wordpressdbpassword',
-    'rs-mysql/application_user_privileges' => 'array:["text:select","text:update","text:insert","text:create","text:delete","text:drop"]',
-    'rs-mysql/application_username' => 'text:wordpressdbuser',
-    'rs-mysql/backup/keep/dailies' => 'text:14',
-    'rs-mysql/backup/keep/keep_last' => 'text:60',
-    'rs-mysql/backup/keep/monthlies' => 'text:12',
-    'rs-mysql/backup/keep/weeklies' => 'text:6',
-    'rs-mysql/backup/keep/yearlies' => 'text:2',
-    'rs-mysql/backup/lineage' => 'text:dockerdblineage',
-    'rs-mysql/bind_network_interface' => 'text:private',
-    'rs-mysql/device/count' => 'text:2',
-    'rs-mysql/device/destroy_on_decommission' => 'text:false',
-    'rs-mysql/device/detach_timeout' => 'text:300',
-    'rs-mysql/device/mount_point' => 'text:/mnt/storage',
-    'rs-mysql/device/nickname' => 'text:data_storage',
-    'rs-mysql/device/volume_size' => 'text:10',
-    'rs-mysql/import/dump_file' => 'text:app_test.sql',
-    'rs-mysql/import/repository' => 'text:git://github.com/rightscale/examples.git',
-    'rs-mysql/import/revision' => 'text:unified_php',
-    'rs-mysql/schedule/enable' => 'text:false',
-    'rs-mysql/server_root_password' => 'text:mysqlrootpassword',
-    'rs-mysql/server_usage' => 'text:dedicated',
-  } end
+
+
+resource "rds", type: "rds.instance" do
+  name join(['rds-instance-',last(split(@@deployment.href,"/"))])
+  db_name  "dwp_db"
+#  instance_id "mitch-plugin-cat-1"
+  instance_class "db.m1.small"
+  engine "MySQL"
+  allocated_storage "5"
+  master_username "mitchsqluser"
+  master_user_password "mitchsqlpassword"
 end
+
+
+
+
+
 
 ### Security Group Definitions ###
 resource "sec_group", type: "security_group" do
@@ -149,6 +125,9 @@ define generated_launch(@wordpress_docker_server, @db_server, @ssh_key, @sec_gro
   provision(@sec_group_rule_http)
   provision(@sec_group_rule_mysql)
   provision(@sec_group_rule_ssh)
+  
+  call createCreds(["CAT_MYSQL_ROOT_PASSWORD","CAT_MYSQL_APP_PASSWORD","CAT_MYSQL_APP_USERNAME"])
+
 
   concurrent return @db_server, @wordpress_docker_server do
     provision(@db_server)
@@ -177,4 +156,90 @@ define generated_launch(@wordpress_docker_server, @db_server, @ssh_key, @sec_gro
   $wordpress_server_address = @wordpress_docker_server.current_instance().public_ip_addresses[0]
   $wordpress_link = join(["http://",$wordpress_server_address,":8080"])
 
+end
+
+########
+# Helper Functions
+########
+
+
+# Creates CREDENTIAL objects in Cloud Management for each of the named items in the given array.
+define createCreds($credname_array) do
+  foreach $cred_name in $credname_array do
+    @cred = rs.credentials.get(filter: join(["name==",$cred_name]))
+    if empty?(@cred) 
+      $cred_value = join(split(uuid(), "-"))[0..14] # max of 16 characters for mysql username and we're adding a letter next.
+      $cred_value = "a" + $cred_value # add an alpha to the beginning of the value - just in case.
+      @task=rs.credentials.create({"name":$cred_name, "value": $cred_value})
+    end
+  end
+end
+
+
+#########
+# AWS RDS Service Namespace
+#########
+namespace "rds" do
+  service do
+    host "https://184.73.90.169:8443"         # HTTP endpoint presenting an API defined by self-service to act on resources
+    path "/rds"           # path prefix for all resources, RightScale account_id substituted in for multi-tenancy
+    headers do {
+      "X-Api-Version" => "1.0",
+      "X-Api-Shared-Secret" => "12345"  # Shared secret set up on the Praxis App server providing the RDS plugin service
+    } end
+  end
+  
+  
+  type "instance" do                       # defines resource of type "load_balancer"
+    provision "provision_db"         # name of RCL definition to use to provision the resource
+    delete "delete_db"               # name of RCL definition to use to delete the resource
+    fields do                          
+#      field "name" do                               
+#        type "string"
+#        required true
+#      end
+      
+      field "db_name"  do
+        type "string"
+      end
+#      field "instance_id" do
+#        type "string"
+#      end
+      field "instance_class" do
+        type "string"
+      end
+      field "engine" do
+        type "string"
+      end
+      field "allocated_storage" do
+        type "string"
+      end
+      field "master_username" do
+        type "string"
+      end
+      field "master_user_password" do
+        type "string"
+      end
+    end
+  end
+end
+
+# Define the RCL definitions to create and destroy the resource
+define provision_db(@raw_rds) return @rds do
+  
+  @rds = rds.instance.create({
+    db_name: @raw_rds.db_name,
+    instance_id: @raw_rds.name,
+    instance_class: @raw_rds.instance_class,
+    engine: @raw_rds.engine,
+    allocated_storage: @raw_rds.allocated_storage,
+    master_username: @raw_rds.master_username,
+    master_user_password: @raw_rds.master_user_password
+  }) # Calls .create on the API resource
+  
+
+end
+
+define delete_db(@rds) do
+  @rds.destroy() # Calls .delete on the API resource
 end

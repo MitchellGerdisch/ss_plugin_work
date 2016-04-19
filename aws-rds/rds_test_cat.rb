@@ -6,56 +6,6 @@ short_description "Allows you to create and manage AWS RDS instances like any ot
 
 long_description "Create/Delete/List AWS RDS instances via an SS Plugin Praxis App server"
 
-#########
-# Inputs
-#########
-parameter "rds_name" do
-  type "string"
-  label "RDS Name"
-  category "RDS"
-  constraint_description "The RDS name must be unique within your set of load balancers for the region, must have a maximum of 32 characters, must contain only alphanumeric characters or hyphens, and cannot begin or end with a hyphen."
-  allowed_pattern "(?=[a-zA-Z0-9\-]{1,32}$)^[a-zA-Z0-9]+(\-[a-zA-Z0-9]+)*$"
-end
-
-parameter "lb_protocol" do
-  category "RDS"
-  label "Load Balancer Listener Protocol"
-  type "string"
-  allowed_values "HTTP", "HTTPS", "TCP", "SSL"
-  default "HTTP"
-end
-
-parameter "lb_port" do
-  category "RDS"
-  label "Load Balancer Listener Port"
-  type "string"
-  default "80"
-  constraint_description "RDS listener port is restricted to ports 25, 80, 443, 465, 587, or 1024-65535"
-  allowed_pattern "^(25|80|443|465|587)$|^(102[4-9])$|^(10[3-9][0-9])$|^(1[1-9][0-9][0-9])$|^([2-9][0-9][0-9][0-9])$|^([1-5][0-9][0-9][0-9][0-9])$|^(6[0-4][0-9][0-9][0-9])$|^(65[0-4][0-9][0-9])$|^(655[0-2][0-9])$|^(6553[0-5])$"
-end
-
-parameter "instance_protocol" do
-  category "RDS"
-  label "Backend Instances' Listening Protocol"
-  type "string"
-  allowed_values "HTTP", "HTTPS", "TCP", "SSL"
-  default "HTTP"
-end
-
-parameter "instance_port" do
-  category "RDS"
-  label "Backend Instances' Listening Port"
-  type "string"
-  default "8080"
-end
-
-parameter "availability_zones" do
-  category "RDS"
-  label "Availability Zones"
-  type "list"
-  default "us-east-1a"
-end
-
 
 #########
 # Resources
