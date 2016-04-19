@@ -12,6 +12,7 @@ module V1
         attribute :allocated_storage, Attributor::Integer
         attribute :master_username, Attributor::String
         attribute :master_user_password, Attributor::String
+        attribute :db_security_groups, Attributor::Collection.of(String)
         attribute :aws_creds, Attributor::Collection.of(String)
 
       end

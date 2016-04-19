@@ -17,6 +17,7 @@ resource "rds", type: "rds.instance" do
   instance_class "db.m1.small"
   engine "MySQL"
   allocated_storage "5"
+  db_security_groups "rds-ss-secgroup"
 end
 
 operation "launch" do
@@ -123,6 +124,7 @@ define provision_db(@raw_rds) return @rds do
     instance_class: @raw_rds.instance_class,
     engine: @raw_rds.engine,
     allocated_storage: @raw_rds.allocated_storage,
+    db_security_groups: @raw_rds.db_security_groups,
     master_username: $rds_username,
     master_user_password: $rds_password
   }) # Calls .create on the API resource

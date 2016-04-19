@@ -39,6 +39,7 @@ module V1
           attribute :allocated_storage, required: true
           attribute :master_username, required: true
           attribute :master_user_password, required: true
+          attribute :db_security_groups
           attribute :aws_creds
         end
         response :created

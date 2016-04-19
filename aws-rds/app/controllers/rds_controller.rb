@@ -124,6 +124,7 @@ module V1
         allocated_storage: request.payload.allocated_storage,
         db_instance_class: request.payload.instance_class,
         engine: request.payload.engine, # MySQL
+        db_security_groups: request.payload.db_security_groups, 
         master_username: request.payload.master_username,
         master_user_password: request.payload.master_user_password,
         multi_az: false
