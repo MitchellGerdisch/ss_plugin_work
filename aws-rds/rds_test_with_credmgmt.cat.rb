@@ -6,6 +6,16 @@ short_description "Allows you to create and manage AWS RDS instances like any ot
 
 long_description "Create/Delete/List AWS RDS instances via an SS Plugin Praxis App server"
 
+### Inputs ####
+parameter "param_db_size" do 
+  category "RDS Configuration Options"
+  label "DB Size (GB)" 
+  type "number" 
+  min_value 5
+  max_value 25
+  default 5
+end
+
 
 #########
 # Resources
@@ -16,7 +26,7 @@ resource "rds", type: "rds.instance" do
   db_name  "rds_db"
   instance_class "db.m1.small"
   engine "MySQL"
-  allocated_storage "5"
+  allocated_storage $param_db_size 
   db_security_groups "rds-ss-secgroup"
 end
 
@@ -25,7 +35,8 @@ operation "launch" do
   definition 'launch_handler' 
   
   output_mappings do {
-    $rds_url => $rds_link
+    $rds_url => $rds_link,
+    $rds_connect_port => $rds_port
   } end
 end
 
@@ -37,7 +48,7 @@ output "rds_url" do
   category "Output"
 end
 
-output "rds_port" do
+output "rds_connect_port" do
   label "RDS Port"
   category "Output"
 end
