@@ -61,18 +61,15 @@ end
 # Resources
 #########
 
-resource "rds", type: "rds.db_instance" do
-  name                  $rds_name
-  availability_zones  $availability_zones
-  listeners do [ # Must have at least one listener defined.
-    {
-      "listener_name" => "rds_listener_http8080_http8080",
-      "lb_protocol" => $lb_protocol,
-      "lb_port" => $lb_port,
-      "instance_protocol" => $instance_protocol,
-      "instance_port" => $instance_port
-    }
-  ] end
+resource "rds", type: "rds.instance" do
+  name  "mitch-plugin-cat-1"
+  db_name  "mitch_db_plugin_cat_1"
+#  instance_id "mitch-plugin-cat-1"
+  instance_class "db.m1.small"
+  engine "MySQL"
+  allocated_storage "5"
+  master_username "mitchsqluser"
+  master_user_password "mitchsqlpassword"
 end
 
 
@@ -91,90 +88,51 @@ namespace "rds" do
   end
   
   
-  type "load_balancer" do                       # defines resource of type "load_balancer"
-    provision "provision_lb"         # name of RCL definition to use to provision the resource
-    delete "delete_lb"               # name of RCL definition to use to delete the resource
+  type "instance" do                       # defines resource of type "load_balancer"
+    provision "provision_db"         # name of RCL definition to use to provision the resource
+    delete "delete_db"               # name of RCL definition to use to delete the resource
     fields do                          
 #      field "name" do                               
 #        type "string"
 #        required true
 #      end
-      field "subnets" do                               
+      
+      field "db_name"  do
         type "string"
       end
-      field "availability_zones" do
-        type "array"
-      end
-      field "security_groups" do                               
+#      field "instance_id" do
+#        type "string"
+#      end
+      field "instance_class" do
         type "string"
       end
-      field "healthcheck_target" do                               
+      field "engine" do
         type "string"
       end
-      field "healthcheck_interval" do
+      field "allocated_storage" do
         type "string"
       end
-      field "healthcheck_timeout" do
+      field "master_username" do
         type "string"
       end
-      field "healthcheck_unhealthy_threshold" do
+      field "master_user_password" do
         type "string"
-      end
-      field "healthcheck_healthy_threshold" do
-        type "string"
-      end
-      field "connection_draining_timeout" do
-        type "string"
-      end
-      field "connection_idle_timeout" do
-        type "string"
-      end
-      field "cross_zone" do
-        type "string"
-      end
-      field "scheme" do
-        type "string"
-      end
-      field "listeners" do
-        type "composite"
-        required true
-      end
-      field "tags" do
-        type "array"
       end
     end
   end
 end
 
 # Define the RCL definitions to create and destroy the resource
-define provision_lb(@raw_rds) return @rds do
+define provision_db(@raw_rds) return @rds do
   
-  $api_listeners = []
-  foreach $listener in @raw_rds.listeners do
-    $api_listener = {
-      lb_protocol: $listener["lb_protocol"],
-      lb_port: $listener["lb_port"],
-      instance_protocol: $listener["instance_protocol"],
-      instance_port: $listener["instance_port"]
-    }
-    $api_listeners << $api_listener
-  end
-  
-#  rs.audit_entries.create(
-#    notify: "None",
-#    audit_entry: {
-#      auditee_href: @@deployment,
-#      summary: "listeners:",
-#      detail: to_s($api_listeners)
-#    }
-#  )
-  
-
-  
-  @rds = rds.load_balancer.create({
-    name: @raw_rds.name,
-    availability_zones: @raw_rds.availability_zones,
-    listeners: $api_listeners
+  @rds = rds.instance.create({
+    db_name: @raw_rds.db_name,
+    instance_id: @raw_rds.name,
+    instance_class: @raw_rds.instance_class,
+    engine: @raw_rds.engine,
+    allocated_storage: @raw_rds.allocated_storage,
+    master_username: @raw_rds.master_username,
+    master_user_password: @raw_rds.master_user_password
   }) # Calls .create on the API resource
   
 
