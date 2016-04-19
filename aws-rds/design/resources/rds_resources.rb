@@ -40,6 +40,7 @@ module V1
           attribute :master_username, required: true
           attribute :master_user_password, required: true
           attribute :db_security_groups
+          attribute :tags
           attribute :aws_creds
         end
         response :created

@@ -103,6 +103,7 @@ resource "rds", type: "rds.instance" do
   db_security_groups "rds-ss-secgroup"  # CURRENTLY THIS NEEDS TO BE PREDEFINED AND SHOULD ALLOW INTERNET ACCESS FOR TESTING
   master_username "wordpressdbuser"
   master_user_password "wordpressdbpassword"
+  tags "costcenter:"+$param_costcenter,"test:tag2"
 end
 
 # Operations
@@ -167,7 +168,7 @@ define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec
   $wordpress_link = join(["http://",$wordpress_server_address,":8080"])
     
   # Tag the docker server with the selected project cost center ID.
-  $tags=[join(["costcenter:id=",$param_costcenter])]
+  $tags=[join(["ec2:costcenter=",$param_costcenter])]
   rs.tags.multi_add(resource_hrefs: @@deployment.servers().current_instance().href[], tags: $tags)
 
 end
@@ -273,6 +274,14 @@ define provision_db(@raw_rds) return @rds do
     $api_secgroups << $api_secgroup
   end
   
+  # Array up the tags
+  $api_tags = []
+  foreach $api_tag in split(@raw_rds.tags, ",") do
+    $split_tag = split($api_tag, ":")
+    $tag_hash = { "key":$split_tag[0], "value":$split_tag[1] }
+    $api_tags << $tag_hash
+  end
+  
   # Get the AWS creds and send them to the plugin server to use
   # NOTE: HTTPS is being used to protect the these values.
   @cred = rs.credentials.get(filter: "name==AWS_ACCESS_KEY_ID", view: "sensitive") 
@@ -294,6 +303,7 @@ define provision_db(@raw_rds) return @rds do
     db_security_groups: $api_secgroups,
     master_username: @raw_rds.master_username,
     master_user_password: @raw_rds.master_user_password,
+    tags: $api_tags
     aws_creds: [$aws_access_key_id, $aws_secret_access_key]
   }) # Calls .create on the API resource
   
