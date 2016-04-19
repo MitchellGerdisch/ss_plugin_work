@@ -24,9 +24,9 @@ operation "launch" do
   description 'Launch the application' 
   definition 'launch_handler' 
   
-#  output_mappings do {
-#    $rds_url => $rds_link
-#  } end
+  output_mappings do {
+    $rds_url => $rds_link
+  } end
 end
 
 #########
@@ -37,13 +37,31 @@ output "rds_url" do
   category "Output"
 end
 
+output "rds_port" do
+  label "RDS Port"
+  category "Output"
+end
+
 ########
 # RCL
 ########
-define launch_handler(@rds) return @rds do
+define launch_handler(@rds) return @rds, $rds_link, $rds_port do
   
   provision(@rds)
+    
+  $rds_object = to_object(@rds)
   
+  rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "rds after provision returns:",
+      detail: to_s($rds_object)
+    }
+  )
+  
+  $rds_link = $rds_object["details"][0]["db_instance_endpoint_address"]
+  $rds_port = $rds_object["details"][0]["db_instance_endpoint_port"]
 end
 
 
@@ -151,19 +169,22 @@ define provision_db(@raw_rds) return @rds do
   $found_fqdn = false
   while logic_not($found_fqdn) do
     
-    $rds_endpoint = to_object(@rds)["details"][0]["db_instance_endpoint_address"]
+    @rds = @rds.get()  # refresh the fields for the resource
+    $db_instance_status = to_object(@rds)["details"][0]["db_instance_status"]
   
     rs.audit_entries.create(
       notify: "None",
       audit_entry: {
         auditee_href: @@deployment,
-        summary: "rds db_fqdn:"+$rds_endpoint,
+        summary: "db_instance_status: "+$db_instance_status,
         detail: ""
       }
     )
     
-    if $rds_endpoint != "not available yet"
+    if $db_instance_status != "creating"  # then it's as ready as it's gonna be
       $found_fqdn = true
+    else
+      sleep(30)
     end
   end
 end
@@ -175,6 +196,15 @@ define delete_db(@rds) do
   $rds_username_cred = "RDS_USERNAME_"+$deployment_number
   $rds_password_cred = "RDS_PASSWORD_"+$deployment_number
   call deleteCreds([$rds_username_cred, $rds_password_cred])
+  
+  rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "deleting rds: "+to_s(@rds),
+      detail: to_s(to_object(@rds))
+    }
+  )
   
   @rds.destroy() # Calls .delete on the API resource
 end
@@ -199,7 +229,23 @@ end
 define deleteCreds($credname_array) do
   foreach $cred_name in $credname_array do
     @cred = rs.credentials.get(filter: join(["name==",$cred_name]))
+    rs.audit_entries.create(
+      notify: "None",
+      audit_entry: {
+        auditee_href: @@deployment,
+        summary: "cred name: "+$cred_name+" - "+to_s(@cred),
+        detail: ""
+      }
+    )
     if logic_not(empty?(@cred))
+      rs.audit_entries.create(
+        notify: "None",
+        audit_entry: {
+          auditee_href: @@deployment,
+          summary: "Deleting cred: "+to_s(@cred),
+          detail: ""
+        }
+      )
       @cred.destroy()
     end
   end

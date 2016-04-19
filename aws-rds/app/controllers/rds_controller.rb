@@ -12,16 +12,16 @@ module V1
       
       Praxis::Application.instance.logger.info "In index function"
       rds = V1::Helpers::Aws.get_rds_client
-      Praxis::Application.instance.logger.info "After AWS API call"
+#      Praxis::Application.instance.logger.info "After AWS API call"
 
 
       begin
-        Praxis::Application.instance.logger.info "In AWS response processing section"
+#        Praxis::Application.instance.logger.info "In AWS response processing section"
         my_db_instances = []
         list_rds_response = rds.describe_db_instances
 
         list_rds_response.db_instances.each do |db_instance|
-          Praxis::Application.instance.logger.info "db_instance from AWS: "+db_instance.to_s
+#          Praxis::Application.instance.logger.info "db_instance from AWS: "+db_instance.to_s
           
           # The endpoint may not be defined yet if the instance is still creating.
           db_endpoint = "not available yet"
@@ -112,9 +112,9 @@ module V1
         ENV['AWS_SECRET_ACCESS_KEY'] = aws_secret_access_key
       end
       
-      Praxis::Application.instance.logger.info "Before AWS RDS Create API call"
+#      Praxis::Application.instance.logger.info "Before AWS RDS Create API call"
       rds = V1::Helpers::Aws.get_rds_client
-      Praxis::Application.instance.logger.info "After AWS RDS Create API call"
+#      Praxis::Application.instance.logger.info "After AWS RDS Create API call"
 
             
       # Build params for the create      
@@ -133,11 +133,11 @@ module V1
       
       begin
         # create the RDS
-        Praxis::Application.instance.logger.info "RDS api_params: "+api_params.to_s
+#        Praxis::Application.instance.logger.info "RDS api_params: "+api_params.to_s
 
         create_rds_response = rds.create_db_instance(api_params)
   
-        Praxis::Application.instance.logger.info "RDS Create response"+create_rds_response.inspect
+#        Praxis::Application.instance.logger.info "RDS Create response"+create_rds_response.inspect
        
         # Build the response returned from the plugin service.
         # If there was a problem with calling AWS, it will be replaced by the error response.
@@ -168,7 +168,7 @@ module V1
 #      app.logger.info("departing response header: "+response.headers.to_s)
 #      app.logger.info("departing response body: "+response.body.to_s)
 
-      Praxis::Application.instance.logger.info "Before RDS Create response return"
+#      Praxis::Application.instance.logger.info "Before RDS Create response return"
 
       response
 
@@ -176,7 +176,8 @@ module V1
     
     def delete(instance_id:, **params)
       app = Praxis::Application.instance
-      
+      Praxis::Application.instance.logger.info "In RDS delete section"
+
       rds = V1::Helpers::Aws.get_rds_client
       
       rds_params = {
@@ -188,7 +189,7 @@ module V1
 
       begin
         rds_response = rds.delete_db_instance(rds_params)     
-        Praxis::Application.instance.logger.info "AWS Delete response: "+rds_response.inspect
+#        Praxis::Application.instance.logger.info "AWS Delete response: "+rds_response.inspect
    
       rescue Aws::RDS::Errors::InvalidDBInstanceState,
              Aws::RDS::Errors::DBInstanceNotFound,
