@@ -51,14 +51,14 @@ define launch_handler(@rds) return @rds, $rds_link, $rds_port do
     
   $rds_object = to_object(@rds)
   
-  rs.audit_entries.create(
-    notify: "None",
-    audit_entry: {
-      auditee_href: @@deployment,
-      summary: "rds after provision returns:",
-      detail: to_s($rds_object)
-    }
-  )
+#  rs.audit_entries.create(
+#    notify: "None",
+#    audit_entry: {
+#      auditee_href: @@deployment,
+#      summary: "rds after provision returns:",
+#      detail: to_s($rds_object)
+#    }
+#  )
   
   $rds_link = $rds_object["details"][0]["db_instance_endpoint_address"]
   $rds_port = $rds_object["details"][0]["db_instance_endpoint_port"]
@@ -160,7 +160,7 @@ define provision_db(@raw_rds) return @rds do
     notify: "None",
     audit_entry: {
       auditee_href: @@deployment,
-      summary: "rds object:",
+      summary: "created rds object:",
       detail: to_s(to_object(@rds))
     }
   )
@@ -229,23 +229,23 @@ end
 define deleteCreds($credname_array) do
   foreach $cred_name in $credname_array do
     @cred = rs.credentials.get(filter: join(["name==",$cred_name]))
-    rs.audit_entries.create(
-      notify: "None",
-      audit_entry: {
-        auditee_href: @@deployment,
-        summary: "cred name: "+$cred_name+" - "+to_s(@cred),
-        detail: ""
-      }
-    )
+#    rs.audit_entries.create(
+#      notify: "None",
+#      audit_entry: {
+#        auditee_href: @@deployment,
+#        summary: "cred name: "+$cred_name+" - "+to_s(@cred),
+#        detail: ""
+#      }
+#    )
     if logic_not(empty?(@cred))
-      rs.audit_entries.create(
-        notify: "None",
-        audit_entry: {
-          auditee_href: @@deployment,
-          summary: "Deleting cred: "+to_s(@cred),
-          detail: ""
-        }
-      )
+#      rs.audit_entries.create(
+#        notify: "None",
+#        audit_entry: {
+#          auditee_href: @@deployment,
+#          summary: "Deleting cred: "+to_s(@cred),
+#          detail: ""
+#        }
+#      )
       @cred.destroy()
     end
   end
