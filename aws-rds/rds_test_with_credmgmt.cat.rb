@@ -79,6 +79,9 @@ namespace "rds" do
       field "allocated_storage" do
         type "string"
       end
+      field "db_security_groups" do
+        type "string"
+      end
       field "master_username" do
         type "string"
       end
@@ -92,14 +95,14 @@ end
 # Define the RCL definitions to create and destroy the resource
 define provision_db(@raw_rds) return @rds do
   
-  rs.audit_entries.create(
-    notify: "None",
-    audit_entry: {
-      auditee_href: @@deployment,
-      summary: "rds resource in provision_db:",
-      detail: to_s(@raw_rds)
-    }
-  )
+#  rs.audit_entries.create(
+#    notify: "None",
+#    audit_entry: {
+#      auditee_href: @@deployment,
+#      summary: "rds raw object:",
+#      detail: to_s(to_object(@raw_rds))
+#    }
+#  )
   
   # Create Credentials so a user can access the RDS DB if they want.
   $deployment_number = last(split(@@deployment.href,"/"))
@@ -118,18 +121,51 @@ define provision_db(@raw_rds) return @rds do
   $cred_value = $cred_hash["details"][0]["value"]
   $rds_password = $cred_value
   
+  # Array up the security groups
+  $api_secgroups = []
+  foreach $api_secgroup in split(@raw_rds.db_security_groups, ",") do
+    $api_secgroups << $api_secgroup
+  end
+  
   @rds = rds.instance.create({
     db_name: @raw_rds.db_name,
     instance_id: @raw_rds.name,
     instance_class: @raw_rds.instance_class,
     engine: @raw_rds.engine,
     allocated_storage: @raw_rds.allocated_storage,
-    db_security_groups: @raw_rds.db_security_groups,
+    db_security_groups: $api_secgroups,
     master_username: $rds_username,
     master_user_password: $rds_password
   }) # Calls .create on the API resource
   
-
+  rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "rds object:",
+      detail: to_s(to_object(@rds))
+    }
+  )
+  
+  # Now wait until the RDS is available before returning
+  $found_fqdn = false
+  while logic_not($found_fqdn) do
+    
+    $rds_endpoint = to_object(@rds)["details"][0]["db_instance_endpoint_address"]
+  
+    rs.audit_entries.create(
+      notify: "None",
+      audit_entry: {
+        auditee_href: @@deployment,
+        summary: "rds db_fqdn:"+$rds_endpoint,
+        detail: ""
+      }
+    )
+    
+    if $rds_endpoint != "not available yet"
+      $found_fqdn = true
+    end
+  end
 end
 
 define delete_db(@rds) do
@@ -164,7 +200,7 @@ define deleteCreds($credname_array) do
   foreach $cred_name in $credname_array do
     @cred = rs.credentials.get(filter: join(["name==",$cred_name]))
     if logic_not(empty?(@cred))
-      @task=@cred.destroy
+      @cred.destroy()
     end
   end
 end
