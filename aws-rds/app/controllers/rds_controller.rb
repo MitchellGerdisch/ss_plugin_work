@@ -156,7 +156,7 @@ module V1
         db_security_groups: request.payload.db_security_groups, 
         master_username: request.payload.master_username,
         master_user_password: request.payload.master_user_password,
-        tags: request.payload.tags
+        tags: request.payload.tags,
         multi_az: false
       }
 #      app.logger.info("api_params: "+api_params.to_s)
