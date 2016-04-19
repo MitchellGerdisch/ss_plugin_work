@@ -103,7 +103,7 @@ resource "rds", type: "rds.instance" do
   db_security_groups "rds-ss-secgroup"  # CURRENTLY THIS NEEDS TO BE PREDEFINED AND SHOULD ALLOW INTERNET ACCESS FOR TESTING
   master_username "wordpressdbuser"
   master_user_password "wordpressdbpassword"
-  tags "costcenter:"+$param_costcenter,"test:tag2"
+  tags join(["costcenter:",$param_costcenter]),"test:tag2"
 end
 
 # Operations
@@ -234,6 +234,9 @@ namespace "rds" do
       field "master_user_password" do
         type "string"
       end
+      field "tags" do
+        type "array"
+      end
     end
   end
 end
@@ -241,20 +244,20 @@ end
 # Define the RCL definitions to create and destroy the resource
 define provision_db(@raw_rds) return @rds do
   
-#  rs.audit_entries.create(
-#    notify: "None",
-#    audit_entry: {
-#      auditee_href: @@deployment,
-#      summary: "rds raw object:",
-#      detail: to_s(to_object(@raw_rds))
-#    }
-#  )
+  rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "rds raw object:",
+      detail: to_s(to_object(@raw_rds))
+    }
+  )
   
   # Create Credentials so a user can access the RDS DB if they want.
-  $deployment_number = last(split(@@deployment.href,"/"))
-  $rds_username_cred = "RDS_USERNAME_"+$deployment_number
-  $rds_password_cred = "RDS_PASSWORD_"+$deployment_number
-  call createCreds([$rds_username_cred, $rds_password_cred])
+#  $deployment_number = last(split(@@deployment.href,"/"))
+#  $rds_username_cred = "RDS_USERNAME_"+$deployment_number
+#  $rds_password_cred = "RDS_PASSWORD_"+$deployment_number
+#  call createCreds([$rds_username_cred, $rds_password_cred])
   
   # Pass the username and password to the plugin service as part of the create
   # username and password are hardcoded in the docker env stuff above
@@ -276,7 +279,15 @@ define provision_db(@raw_rds) return @rds do
   
   # Array up the tags
   $api_tags = []
-  foreach $api_tag in split(@raw_rds.tags, ",") do
+  foreach $api_tag in @raw_rds.tags do
+    rs.audit_entries.create(
+      notify: "None",
+      audit_entry: {
+        auditee_href: @@deployment,
+        summary: "api_tag: "+$api_tag,
+        detail: ""
+      }
+    )
     $split_tag = split($api_tag, ":")
     $tag_hash = { "key":$split_tag[0], "value":$split_tag[1] }
     $api_tags << $tag_hash
@@ -303,7 +314,7 @@ define provision_db(@raw_rds) return @rds do
     db_security_groups: $api_secgroups,
     master_username: @raw_rds.master_username,
     master_user_password: @raw_rds.master_user_password,
-    tags: $api_tags
+    tags: $api_tags,
     aws_creds: [$aws_access_key_id, $aws_secret_access_key]
   }) # Calls .create on the API resource
   
