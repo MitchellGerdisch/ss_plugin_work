@@ -102,6 +102,9 @@ module V1
       
       Praxis::Application.instance.logger.info "In RDS create section"
       
+      Praxis::Application.instance.logger.info "RDS request payload: "+request.payload.to_s
+
+      
       # NOTE THE ASSUMPTION IS THAT HTTPS IS BEING USED SO KEYS ARE NOT SNIFFABLE
       if request.payload.aws_creds
         Praxis::Application.instance.logger.info "Found AWS creds in request"
@@ -134,7 +137,7 @@ module V1
       
       begin
         # create the RDS
-#        Praxis::Application.instance.logger.info "RDS api_params: "+api_params.to_s
+        Praxis::Application.instance.logger.info "RDS api_params: "+api_params.to_s
 
         create_rds_response = rds.create_db_instance(api_params)
   
