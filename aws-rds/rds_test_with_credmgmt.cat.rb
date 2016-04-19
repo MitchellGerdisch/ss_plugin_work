@@ -51,14 +51,14 @@ define launch_handler(@rds) return @rds, $rds_link, $rds_port do
     
   $rds_object = to_object(@rds)
   
-#  rs.audit_entries.create(
-#    notify: "None",
-#    audit_entry: {
-#      auditee_href: @@deployment,
-#      summary: "rds after provision returns:",
-#      detail: to_s($rds_object)
-#    }
-#  )
+  rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "rds after provision returns:",
+      detail: to_s($rds_object)
+    }
+  )
   
   $rds_link = $rds_object["details"][0]["db_instance_endpoint_address"]
   $rds_port = $rds_object["details"][0]["db_instance_endpoint_port"]
@@ -145,6 +145,18 @@ define provision_db(@raw_rds) return @rds do
     $api_secgroups << $api_secgroup
   end
   
+  # Get the AWS creds and send them to the plugin server to use
+  # NOTE: HTTPS is being used to protect the these values.
+  @cred = rs.credentials.get(filter: "name==AWS_ACCESS_KEY_ID", view: "sensitive") 
+  $cred_hash = to_object(@cred)
+  $cred_value = $cred_hash["details"][0]["value"]
+  $aws_access_key_id = $cred_value
+  
+  @cred = rs.credentials.get(filter: "name==AWS_SECRET_ACCESS_KEY", view: "sensitive") 
+  $cred_hash = to_object(@cred)
+  $cred_value = $cred_hash["details"][0]["value"]
+  $aws_secret_access_key = $cred_value
+  
   @rds = rds.instance.create({
     db_name: @raw_rds.db_name,
     instance_id: @raw_rds.name,
@@ -153,7 +165,8 @@ define provision_db(@raw_rds) return @rds do
     allocated_storage: @raw_rds.allocated_storage,
     db_security_groups: $api_secgroups,
     master_username: $rds_username,
-    master_user_password: $rds_password
+    master_user_password: $rds_password,
+    aws_creds: [$aws_access_key_id, $aws_secret_access_key]
   }) # Calls .create on the API resource
   
   rs.audit_entries.create(
@@ -172,14 +185,14 @@ define provision_db(@raw_rds) return @rds do
     @rds = @rds.get()  # refresh the fields for the resource
     $db_instance_status = to_object(@rds)["details"][0]["db_instance_status"]
   
-    rs.audit_entries.create(
-      notify: "None",
-      audit_entry: {
-        auditee_href: @@deployment,
-        summary: "db_instance_status: "+$db_instance_status,
-        detail: ""
-      }
-    )
+#    rs.audit_entries.create(
+#      notify: "None",
+#      audit_entry: {
+#        auditee_href: @@deployment,
+#        summary: "db_instance_status: "+$db_instance_status,
+#        detail: ""
+#      }
+#    )
     
     if $db_instance_status != "creating"  # then it's as ready as it's gonna be
       $found_fqdn = true
