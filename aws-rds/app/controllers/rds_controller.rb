@@ -119,6 +119,20 @@ module V1
       rds = V1::Helpers::Aws.get_rds_client
 #      Praxis::Application.instance.logger.info "After AWS RDS Create API call"
 
+      if request.payload.key?(:tags)  # Did the user specify tags stuff?
+        api_tags = []
+        tags_array = request.payload.tags
+        tags_array.each do |tag|
+          split_tag = tag.split(":")
+          keyname = split_tag[0]
+          val = split_tag.drop(1).join(":")  # need to account for the possibility that the tag value has colons. This drops the first value which should be the key and then puts things back if they were split above
+          api_tag = {
+            key: keyname,
+            value: val
+          }
+          api_tags << api_tag
+        end
+      end
             
       # Build params for the create      
       api_params = {
@@ -130,7 +144,7 @@ module V1
         db_security_groups: request.payload.db_security_groups, 
         master_username: request.payload.master_username,
         master_user_password: request.payload.master_user_password,
-        tags: request.payload.tags,
+        tags: api_tags,
         multi_az: false
       }
 #      app.logger.info("api_params: "+api_params.to_s)

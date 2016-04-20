@@ -277,22 +277,6 @@ define provision_db(@raw_rds) return @rds do
     $api_secgroups << $api_secgroup
   end
   
-  # Array up the tags
-  $api_tags = []
-  foreach $api_tag in @raw_rds.tags do
-    rs.audit_entries.create(
-      notify: "None",
-      audit_entry: {
-        auditee_href: @@deployment,
-        summary: "api_tag: "+$api_tag,
-        detail: ""
-      }
-    )
-    $split_tag = split($api_tag, ":")
-    $tag_hash = { "key":$split_tag[0], "value":$split_tag[1] }
-    $api_tags << $tag_hash
-  end
-  
   # Get the AWS creds and send them to the plugin server to use
   # NOTE: HTTPS is being used to protect the these values.
   @cred = rs.credentials.get(filter: "name==AWS_ACCESS_KEY_ID", view: "sensitive") 
@@ -314,7 +298,7 @@ define provision_db(@raw_rds) return @rds do
     db_security_groups: $api_secgroups,
     master_username: @raw_rds.master_username,
     master_user_password: @raw_rds.master_user_password,
-    tags: $api_tags,
+    tags: @raw_rds.tags,
     aws_creds: [$aws_access_key_id, $aws_secret_access_key]
   }) # Calls .create on the API resource
   
