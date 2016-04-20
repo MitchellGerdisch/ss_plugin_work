@@ -15,6 +15,25 @@ rs_ca_ver 20131202
 short_description "WordPress Container with External RDS MySQL DB Server"
 
 ### Inputs ####
+parameter "param_db_username" do 
+  category "RDS Configuration Options"
+  label "RDS DB User Name" 
+  type "string" 
+  min_length 1
+  max_length 16
+  allowed_pattern '^[a-zA-Z].*$'
+  no_echo false
+end
+
+parameter "param_db_password" do 
+  category "RDS Configuration Options"
+  label "RDS DB User Password" 
+  type "string" 
+  min_length 8
+  max_length 41
+  no_echo true
+end
+
 parameter "param_db_size" do 
   category "RDS Configuration Options"
   label "DB Size (GB)" 
@@ -83,8 +102,8 @@ resource 'wordpress_docker_server', type: 'server' do
     'COLLECTD_SERVER' => 'env:RS_SKETCHY',
     'DOCKER_ENVIRONMENT' => 'text:wordpress:
   WORDPRESS_DB_HOST: TBD 
-  WORDPRESS_DB_USER: wordpressdbuser
-  WORDPRESS_DB_PASSWORD: wordpressdbpassword
+  WORDPRESS_DB_USER: TBD
+  WORDPRESS_DB_PASSWORD: TBD
   WORDPRESS_DB_NAME: dwp_rds_db',
     'DOCKER_PROJECT' => 'text:rightscale',
     'DOCKER_SERVICES' => 'text:wordpress:
@@ -106,8 +125,8 @@ resource "rds", type: "rds.instance" do
   engine "MySQL"
   allocated_storage $param_db_size 
   db_security_groups "rds-ss-secgroup"  # CURRENTLY THIS NEEDS TO BE PREDEFINED AND SHOULD ALLOW INTERNET ACCESS FOR TESTING
-  master_username "wordpressdbuser"
-  master_user_password "wordpressdbpassword"
+  master_username $param_db_username
+  master_user_password $param_db_password
   tags join(["BudgetCode:",$param_costcenter])
 end
 
@@ -131,7 +150,7 @@ end
 ########
 # RCL
 ########
-define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec_group_rule_http, @sec_group_rule_ssh, $param_costcenter)  return @wordpress_docker_server, @rds, $rds_link, $rds_port, @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh, $wordpress_link do 
+define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec_group_rule_http, @sec_group_rule_ssh, $param_costcenter, $param_db_username, $param_db_password)  return @wordpress_docker_server, @rds, $rds_link, $rds_port, @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh, $wordpress_link do 
 
   call getLaunchInfo() retrieve $execution_name, $userid, $execution_description
   
@@ -165,7 +184,7 @@ define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec
   
   # configure the docker wordpress environment variables to point at the DB server
   $db_host_ip = $rds_link
-  $docker_env = "wordpress:\n   WORDPRESS_DB_HOST: " + $rds_link + "\n   WORDPRESS_DB_USER: wordpressdbuser\n   WORDPRESS_DB_PASSWORD: wordpressdbpassword\n   WORDPRESS_DB_NAME: dwp_rds_db"
+  $docker_env = "wordpress:\n   WORDPRESS_DB_HOST: " + $rds_link + "\n   WORDPRESS_DB_USER: "+ $param_db_username + "\n   WORDPRESS_DB_PASSWORD: " + $param_db_password + "\n   WORDPRESS_DB_NAME: dwp_rds_db"
   $inp = {
     'DOCKER_ENVIRONMENT' => join(["text:", $docker_env])
   } 
@@ -189,6 +208,12 @@ define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec
   $tags=[join(["ec2:BudgetCode=",$param_costcenter]), join(["ec2:ExecutionName=",$execution_name]), join(["ec2:Owner=",$userid]), join(["ec2:Description=",$execution_description])]
   rs.tags.multi_add(resource_hrefs: @@deployment.servers().current_instance().href[], tags: $tags)
 
+  # Create Credentials with the DB creds
+  $deployment_number = last(split(@@deployment.href,"/"))
+  $credname = "CAT_RDS_USERNAME_"+$deployment_number
+  rs.credentials.create({"name":$credname, "value": $param_db_username})
+  $credname = "CAT_RDS_PASSWORD_"+$deployment_number
+  rs.credentials.create({"name":$credname, "value": $param_db_password})
 end
 
 define termination_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec_group_rule_http, @sec_group_rule_ssh)  return @wordpress_docker_server, @rds, @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh do 
@@ -201,6 +226,15 @@ define termination_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group,
   delete(@ssh_key)
   delete(@sec_group_rule_http)
   delete(@sec_group_rule_ssh)
+  
+  # Delete the creds we created for the user-provided DB username and password
+  $deployment_number = last(split(@@deployment.href,"/"))
+  $credname = "CAT_RDS_USERNAME_"+$deployment_number
+  @cred=rs.credentials.get(filter: [join(["name==",$credname])])
+  @cred.destroy()
+  $credname = "CAT_RDS_PASSWORD_"+$deployment_number
+  @cred=rs.credentials.get(filter: [join(["name==",$credname])])
+  @cred.destroy()
 
 end
 
