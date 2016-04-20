@@ -12,7 +12,7 @@
 
 name 'WordPress Container with External RDS DB Server'
 rs_ca_ver 20131202
-short_description "WordPress Container with External RDS DB Server"
+short_description "WordPress Container with External RDS MySQL DB Server"
 
 ### Inputs ####
 parameter "param_db_size" do 
@@ -26,10 +26,11 @@ end
 
 parameter "param_costcenter" do 
   category "Deployment Options"
-  label "Cost Center Tag" 
-  type "string" 
-  allowed_values "Development", "QA", "Production"
-  default "Development"
+  label "Budget Code" 
+  type "number" 
+  min_value 1
+  max_value 999999
+  default 1164
 end
 
 ### Security Group Definitions ###
