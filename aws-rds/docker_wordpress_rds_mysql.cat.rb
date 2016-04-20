@@ -12,9 +12,7 @@
 
 name 'WordPress Container with External RDS DB Server'
 rs_ca_ver 20131202
-short_description "![logo](https://s3.amazonaws.com/rs-pft/cat-logos/docker.png) ![logo](https://s3.amazonaws.com/rs-pft/cat-logos/amazon_rds_glossy.png)
-
-WordPress Container with External RDS DB Server"
+short_description "WordPress Container with External RDS DB Server"
 
 ### Inputs ####
 parameter "param_db_size" do 
@@ -137,7 +135,7 @@ define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec
   call getLaunchInfo() retrieve $execution_name, $userid, $execution_description
   
   # Set additional tags on RDS
-  $rds_addl_tags = ["ExectionName:"+$execution_name, "Owner:"+$userid, "Description:"+$execution_description]
+  $rds_addl_tags = ["ExecutionName:"+$execution_name, "Owner:"+$userid, "Description:"+$execution_description]
   $rds_object = to_object(@rds)
   $rds_object["fields"]["tags"] = $rds_object["fields"]["tags"] + $rds_addl_tags
   @rds = $rds_object
@@ -187,7 +185,7 @@ define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec
   $wordpress_link = join(["http://",$wordpress_server_address,":8080"])
     
   # Tag the docker server with the required tags.
-  $tags=[join(["ec2:BudgetCode=",$param_costcenter]), join(["ec2:ExectionName=",$execution_name]), join(["ec2:Owner=",$userid]), join(["ec2:Description=",$execution_description])]
+  $tags=[join(["ec2:BudgetCode=",$param_costcenter]), join(["ec2:ExecutionName=",$execution_name]), join(["ec2:Owner=",$userid]), join(["ec2:Description=",$execution_description])]
   rs.tags.multi_add(resource_hrefs: @@deployment.servers().current_instance().href[], tags: $tags)
 
 end
