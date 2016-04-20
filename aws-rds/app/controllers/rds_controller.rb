@@ -144,6 +144,7 @@ module V1
         db_security_groups: request.payload.db_security_groups, 
         master_username: request.payload.master_username,
         master_user_password: request.payload.master_user_password,
+        backup_retention_period: 0, # disabling backups for this POC 
         tags: api_tags,
         multi_az: false
       }
