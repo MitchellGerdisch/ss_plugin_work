@@ -118,6 +118,11 @@ operation "launch" do
     } end
 end 
 
+operation "terminate" do
+    description 'Terminate the application' 
+    definition 'termination_handler' 
+end 
+
 ########
 # RCL
 ########
@@ -173,7 +178,18 @@ define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec
 
 end
 
+define termination_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec_group_rule_http, @sec_group_rule_ssh)  return @wordpress_docker_server, @rds, @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh do 
 
+  concurrent return @rds, @wordpress_docker_server do
+    delete(@rds)
+    delete(@wordpress_docker_server)
+  end
+  
+  delete(@ssh_key)
+  delete(@sec_group_rule_http)
+  delete(@sec_group_rule_ssh)
+
+end
 
 #########
 # Outputs
