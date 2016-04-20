@@ -103,7 +103,7 @@ resource "rds", type: "rds.instance" do
   db_security_groups "rds-ss-secgroup"  # CURRENTLY THIS NEEDS TO BE PREDEFINED AND SHOULD ALLOW INTERNET ACCESS FOR TESTING
   master_username "wordpressdbuser"
   master_user_password "wordpressdbpassword"
-  tags join(["costcenter:",$param_costcenter]),"test:tag2"
+  tags join(["BudgetCode:",$param_costcenter])
 end
 
 # Operations
@@ -127,6 +127,14 @@ end
 # RCL
 ########
 define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec_group_rule_http, @sec_group_rule_ssh, $param_costcenter)  return @wordpress_docker_server, @rds, $rds_link, $rds_port, @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh, $wordpress_link do 
+
+  call getLaunchInfo() retrieve $execution_name, $userid, $execution_description
+  
+  # Set additional tags on RDS
+  $rds_addl_tags = ["ExectionName:"+$execution_name, "Owner:"+$userid, "Description:"+$execution_description]
+  $rds_object = to_object(@rds)
+  $rds_object["fields"]["tags"] = $rds_object["fields"]["tags"] + $rds_addl_tags
+  @rds = $rds_object
 
   provision(@ssh_key)
   provision(@sec_group_rule_http)
@@ -172,8 +180,8 @@ define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec
   $wordpress_server_address = @wordpress_docker_server.current_instance().public_ip_addresses[0]
   $wordpress_link = join(["http://",$wordpress_server_address,":8080"])
     
-  # Tag the docker server with the selected project cost center ID.
-  $tags=[join(["ec2:costcenter=",$param_costcenter])]
+  # Tag the docker server with the required tags.
+  $tags=[join(["ec2:BudgetCode=",$param_costcenter]), join(["ec2:ExectionName=",$execution_name]), join(["ec2:Owner=",$userid]), join(["ec2:Description:",$execution_description])]
   rs.tags.multi_add(resource_hrefs: @@deployment.servers().current_instance().href[], tags: $tags)
 
 end
@@ -412,3 +420,23 @@ define deleteCreds($credname_array) do
     end
   end
 end
+
+define getLaunchInfo() return $execution_name, $userid, $execution_description do
+  
+  $execution_name = $name_array = split(@@deployment.name, "-")
+  $name_array_size = size($name_array)
+  $execution_name = join($name_array[0..($name_array_size-2)])
+  
+  $deployment_description_array = lines(@@deployment.description)
+  $userid="tbd"
+  $execution_description="tbd"
+  foreach $entry in $deployment_description_array do
+    if include?($entry, "Author")
+      $userid = split(split(lstrip(split(split($entry, ":")[1], "(")[0]), '[`')[1],'`]')[0]
+    elsif include?($entry, "CloudApp description:")
+      $execution_description = lstrip(split(split($entry, ":")[1], "\"")[0])
+    end
+  end
+  
+end
+  
