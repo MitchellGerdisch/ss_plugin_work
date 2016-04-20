@@ -1,7 +1,13 @@
+# Docker WordPress Container with an RDS backend for the DB.
+#
+# Key Features:
+#   Creates an RDS instance using SS plugin
+#   Launches a Docker server and a WordPress container on the server which connects to the RDS for the DB.
+#   Tags both the Docker Server and RDS Instance with various tags.
+#
 # TO-DO
 # Handle the username and password for the DB access better.
 # Add bits to support creating and deleting the RDS security group.
-# Add tagging for the RDS instance too.
 
 
 name 'WordPress Container with External RDS DB Server'
@@ -181,7 +187,7 @@ define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec
   $wordpress_link = join(["http://",$wordpress_server_address,":8080"])
     
   # Tag the docker server with the required tags.
-  $tags=[join(["ec2:BudgetCode=",$param_costcenter]), join(["ec2:ExectionName=",$execution_name]), join(["ec2:Owner=",$userid]), join(["ec2:Description:",$execution_description])]
+  $tags=[join(["ec2:BudgetCode=",$param_costcenter]), join(["ec2:ExectionName=",$execution_name]), join(["ec2:Owner=",$userid]), join(["ec2:Description=",$execution_description])]
   rs.tags.multi_add(resource_hrefs: @@deployment.servers().current_instance().href[], tags: $tags)
 
 end
