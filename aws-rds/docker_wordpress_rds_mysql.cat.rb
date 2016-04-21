@@ -124,7 +124,7 @@ resource "rds", type: "rds.instance" do
   instance_class "db.m1.small"
   engine "MySQL"
   allocated_storage $param_db_size 
-  db_security_groups "default"  # CURRENTLY THIS NEEDS TO BE PRECONFIGURED AND ALLOW 0.0.0.0/0 ACCESS
+  db_security_groups "rds-ss-secgroup"  # CURRENTLY THIS NEEDS TO BE PRECONFIGURED AND ALLOW 0.0.0.0/0 ACCESS
   master_username $param_db_username
   master_user_password $param_db_password
   tags join(["BudgetCode:",$param_costcenter])
