@@ -147,8 +147,8 @@ operation "terminate" do
     definition 'termination_handler' 
 end 
 
-operation "rds_snapshot" do
-  description "Take RDS Snapshot"
+operation "RDS Snapshot" do
+  description "Creates a snapshot of the RDS DB."
   definition "take_rds_snapshot"
 end
 
