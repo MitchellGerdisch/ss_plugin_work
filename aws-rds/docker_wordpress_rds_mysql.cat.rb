@@ -147,6 +147,11 @@ operation "terminate" do
     definition 'termination_handler' 
 end 
 
+operation "rds_snapshot" do
+  description "Take RDS Snapshot"
+  definition "take_rds_snapshot"
+end
+
 ########
 # RCL
 ########
@@ -236,6 +241,58 @@ define termination_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group,
   @cred=rs.credentials.get(filter: [join(["name==",$credname])])
   @cred.destroy()
 
+end
+
+define take_rds_snapshot() do
+  
+  # Get the AWS creds and send them to the plugin server to use
+  # NOTE: HTTPS is being used to protect the these values.
+  @cred = rs.credentials.get(filter: "name==AWS_ACCESS_KEY_ID", view: "sensitive") 
+  $cred_hash = to_object(@cred)
+  $cred_value = $cred_hash["details"][0]["value"]
+  $aws_access_key_id = $cred_value
+  
+  @cred = rs.credentials.get(filter: "name==AWS_SECRET_ACCESS_KEY", view: "sensitive") 
+  $cred_hash = to_object(@cred)
+  $cred_value = $cred_hash["details"][0]["value"]
+  $aws_secret_access_key = $cred_value
+  
+  $signature = { 
+      type: "aws",
+      access_key: $aws_access_key_id,
+      secret_key: $aws_secret_access_key
+      }
+    
+  # Keeping track of rds snapshots using a deployment tag
+  $rds_snapshot_num = 0
+  $tags = rs.tags.by_resource(resource_hrefs: [@@deployment.href])
+  $tag_array = $tags[0][0]['tags']
+  foreach $tag_item in $tag_array do
+    $tag = $tag_item['name']
+    if $tag =~ /rds:snapshot/
+      $rds_snapshot_num = split($tag, "=")[1]
+    end
+  end 
+  $rds_snapshot_num = $rds_snapshot_num + 1
+  rs.tags.multi_add(resource_hrefs: [@@deployment.href], tags: [join(["rds:snapshotnum=",$rds_snapshot_num])])
+
+  # Call RDS API directly to do the snapshot
+  $rds_instance_id = join(['rds-instance-',last(split(@@deployment.href,"/"))])
+  $rds_snapshot_id = join(['rds-snapshot-',last(split(@@deployment.href,"/")),"-",$rds_snapshot_num])
+  $response = http_get(
+      url: "https://rds.us-east-1.amazonaws.com/?Action=CreateDBSnapshot&DBInstanceIdentifier="+$rds_instance_id+"&DBSnapshotIdentifier="+$rds_snapshot_id,
+      signature: $signature
+    )
+    
+    rs.audit_entries.create(
+    notify: "None",
+    audit_entry: {
+      auditee_href: @@deployment,
+      summary: "rds snapshot - http response",
+      detail: to_s($response)
+      }
+    )
+   
 end
 
 #########
@@ -375,8 +432,8 @@ define provision_db(@raw_rds) return @rds do
   )
   
   # Now wait until the RDS is available before returning
-  $found_fqdn = false
-  while logic_not($found_fqdn) do
+  $rds_ready = false
+  while logic_not($rds_ready) do
     
     @rds = @rds.get()  # refresh the fields for the resource
     $db_instance_status = to_object(@rds)["details"][0]["db_instance_status"]
@@ -391,7 +448,7 @@ define provision_db(@raw_rds) return @rds do
 #    )
     
     if $db_instance_status != "creating"  # then it's as ready as it's gonna be
-      $found_fqdn = true
+      $rds_ready = true
     else
       sleep(30)
     end
