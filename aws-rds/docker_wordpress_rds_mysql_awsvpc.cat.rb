@@ -54,7 +54,7 @@ end
 
 ### Security Group Definitions ###
 resource "sec_group", type: "security_group" do
-  name join(["DockerServerSecGrp-",@@deployment.href])
+  name join(["DockerServerSecGrp-",last(split(@@deployment.href,"/"))])
   description "Docker Server deployment security group."
   cloud 'EC2 us-east-1'
 end
@@ -135,7 +135,6 @@ resource "rds", type: "rds.instance" do
   instance_class "db.m1.small"
   engine "MySQL"
   allocated_storage $param_db_size 
-  api_vpc_secgroups to_s(@sg.resource_uid)
   master_username $param_db_username
   master_user_password $param_db_password
   tags join(["BudgetCode:",$param_costcenter])
@@ -244,6 +243,7 @@ define termination_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group,
   delete(@sec_group_rule_http)
   delete(@sec_group_rule_ssh)
   delete(@sec_group_rule_mysql)
+  delete(@sec_group)
   
   # Delete the creds we created for the user-provided DB username and password
   $deployment_number = last(split(@@deployment.href,"/"))
@@ -283,11 +283,11 @@ define take_rds_snapshot() do
   foreach $tag_item in $tag_array do
     $tag = $tag_item['name']
     if $tag =~ /rds:snapshot/
-      $rds_snapshot_num = split($tag, "=")[1]
+      $rds_snapshot_num = to_n(split($tag, "=")[1])
     end
   end 
   $rds_snapshot_num = $rds_snapshot_num + 1
-  rs.tags.multi_add(resource_hrefs: [@@deployment.href], tags: [join(["rds:snapshotnum=",$rds_snapshot_num])])
+  rs.tags.multi_add(resource_hrefs: [@@deployment.href], tags: [join(["rds:snapshotnum=",to_s($rds_snapshot_num)])])
 
   # Call RDS API directly to do the snapshot
   $rds_instance_id = join(['rds-instance-',last(split(@@deployment.href,"/"))])
@@ -407,17 +407,11 @@ define provision_db(@raw_rds) return @rds do
 #  $cred_value = $cred_hash["details"][0]["value"]
 #  $rds_password = $cred_value
   
-  # Array up the security groups
-  $api_secgroups = []
-  foreach $api_secgroup in split(@raw_rds.db_security_groups, ",") do
-    $api_secgroups << $api_secgroup
-  end
-  
-  # Array up the vpc security groups
-  $api_vpc_secgroups = []
-  foreach $api_vpc_secgroup in split(@raw_rds.vpc_security_group_ids, ",") do
-    $api_vpc_secgroups << $api_vpc_secgroup
-  end
+#  # Array up the security groups
+#  $api_secgroups = []
+#  foreach $api_secgroup in split(@raw_rds.db_security_groups, ",") do
+#    $api_secgroups << $api_secgroup
+#  end
   
   # Get the AWS creds and send them to the plugin server to use
   # NOTE: HTTPS is being used to protect the these values.
@@ -431,14 +425,17 @@ define provision_db(@raw_rds) return @rds do
   $cred_value = $cred_hash["details"][0]["value"]
   $aws_secret_access_key = $cred_value
   
+  # Get the security group id
+  @sg = rs.security_groups.get(filter: [join(["name==DockerServerSecGrp-",last(split(@@deployment.href,"/"))])])
+  
   @rds = rds.instance.create({
     db_name: @raw_rds.db_name,
     instance_id: @raw_rds.name,
     instance_class: @raw_rds.instance_class,
     engine: @raw_rds.engine,
     allocated_storage: @raw_rds.allocated_storage,
-    db_security_groups: $api_secgroups,
-    vpc_security_group_ids: $api_vpc_secgroups,
+#    db_security_groups: $api_secgroups,
+    vpc_security_group_ids: [to_s(@sg.resource_uid)],
     master_username: @raw_rds.master_username,
     master_user_password: @raw_rds.master_user_password,
     tags: @raw_rds.tags,
