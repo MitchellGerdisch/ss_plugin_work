@@ -142,6 +142,7 @@ module V1
         db_instance_class: request.payload.instance_class,
         engine: request.payload.engine, # MySQL
         db_security_groups: request.payload.db_security_groups, 
+        vpc_security_group_ids: request.payload.vpc_security_group_ids,
         master_username: request.payload.master_username,
         master_user_password: request.payload.master_user_password,
         backup_retention_period: 0, # disabling backups for this POC 

@@ -13,6 +13,7 @@ module V1
         attribute :master_username, Attributor::String
         attribute :master_user_password, Attributor::String
         attribute :db_security_groups, Attributor::Collection.of(String)
+        attribute :vpc_security_group_ids, Attributor::Collection.of(String)
         attribute :tags, Attributor::Collection.of(String)
         attribute :aws_creds, Attributor::Collection.of(String)
 
