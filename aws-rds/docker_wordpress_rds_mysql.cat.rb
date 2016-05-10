@@ -138,7 +138,6 @@ operation "launch" do
     output_mappings do {
       $wordpress_url => $wordpress_link,
       $rds_url => $rds_link,
-      $rds_connect_port => $rds_port
     } end
 end 
 
@@ -155,7 +154,7 @@ end
 ########
 # RCL
 ########
-define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec_group_rule_http, @sec_group_rule_ssh, $param_costcenter, $param_db_username, $param_db_password)  return @wordpress_docker_server, @rds, $rds_link, $rds_port, @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh, $wordpress_link do 
+define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec_group_rule_http, @sec_group_rule_ssh, $param_costcenter, $param_db_username, $param_db_password)  return @wordpress_docker_server, @rds, $rds_link, @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh, $wordpress_link do 
 
   call getLaunchInfo() retrieve $execution_name, $userid, $execution_description
   
@@ -184,12 +183,8 @@ define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec
     }
   )
 
-  $rds_link = $rds_object["details"][0]["db_instance_endpoint_address"]
-  $rds_port = $rds_object["details"][0]["db_instance_endpoint_port"]
-  
   # configure the docker wordpress environment variables to point at the DB server
-  $db_host_ip = $rds_link
-  $docker_env = "wordpress:\n   WORDPRESS_DB_HOST: " + $rds_link + "\n   WORDPRESS_DB_USER: "+ $param_db_username + "\n   WORDPRESS_DB_PASSWORD: " + $param_db_password + "\n   WORDPRESS_DB_NAME: dwp_rds_db"
+  $docker_env = "wordpress:\n   WORDPRESS_DB_HOST: " + $rds_object["details"][0]["db_instance_endpoint_address"] + "\n   WORDPRESS_DB_USER: "+ $param_db_username + "\n   WORDPRESS_DB_PASSWORD: " + $param_db_password + "\n   WORDPRESS_DB_NAME: dwp_rds_db"
   $inp = {
     'DOCKER_ENVIRONMENT' => join(["text:", $docker_env])
   } 
@@ -219,6 +214,12 @@ define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec
   rs.credentials.create({"name":$credname, "value": $param_db_username})
   $credname = "CAT_RDS_PASSWORD_"+$deployment_number
   rs.credentials.create({"name":$credname, "value": $param_db_password})
+    
+  # Build the link to show the RDS info in CM.
+  # NOTE: As seen in other places in this CAT, the assumption is that the RDS is in AWS US-East-1
+  call find_account_number() retrieve $rs_account_number
+  $rds_link = join(['https://my.rightscale.com/acct/',$rs_account_number,'/clouds/1/rds_browser?ui_route=instances/rds-instance-',last(split(@@deployment.href,"/")),'/info'])
+
 end
 
 define termination_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec_group_rule_http, @sec_group_rule_ssh)  return @wordpress_docker_server, @rds, @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh do 
@@ -247,14 +248,10 @@ define take_rds_snapshot() do
   
   # Get the AWS creds and send them to the plugin server to use
   # NOTE: HTTPS is being used to protect the these values.
-  @cred = rs.credentials.get(filter: "name==AWS_ACCESS_KEY_ID", view: "sensitive") 
-  $cred_hash = to_object(@cred)
-  $cred_value = $cred_hash["details"][0]["value"]
+  call get_cred("AWS_ACCESS_KEY_ID") retrieve $cred_value
   $aws_access_key_id = $cred_value
   
-  @cred = rs.credentials.get(filter: "name==AWS_SECRET_ACCESS_KEY", view: "sensitive") 
-  $cred_hash = to_object(@cred)
-  $cred_value = $cred_hash["details"][0]["value"]
+  call get_cred("AWS_SECRET_ACCESS_KEY") retrieve $cred_value
   $aws_secret_access_key = $cred_value
   
   $signature = { 
@@ -307,13 +304,6 @@ output "rds_url" do
   label "RDS Link"
   category "RDS Info"
 end
-
-output "rds_connect_port" do
-  label "RDS Port"
-  category "RDS Info"
-end
-
-
 
 #########
 # AWS RDS Service
@@ -399,16 +389,12 @@ define provision_db(@raw_rds) return @rds do
   
   # Get the AWS creds and send them to the plugin server to use
   # NOTE: HTTPS is being used to protect the these values.
-  @cred = rs.credentials.get(filter: "name==AWS_ACCESS_KEY_ID", view: "sensitive") 
-  $cred_hash = to_object(@cred)
-  $cred_value = $cred_hash["details"][0]["value"]
+  call get_cred("AWS_ACCESS_KEY_ID") retrieve $cred_value
   $aws_access_key_id = $cred_value
   
-  @cred = rs.credentials.get(filter: "name==AWS_SECRET_ACCESS_KEY", view: "sensitive") 
-  $cred_hash = to_object(@cred)
-  $cred_value = $cred_hash["details"][0]["value"]
+  call get_cred("AWS_SECRET_ACCESS_KEY") retrieve $cred_value
   $aws_secret_access_key = $cred_value
-  
+    
   @rds = rds.instance.create({
     db_name: @raw_rds.db_name,
     instance_id: @raw_rds.name,
@@ -534,5 +520,45 @@ define getLaunchInfo() return $execution_name, $userid, $execution_description d
     end
   end
   
+#  rs.audit_entries.create(
+#    notify: "None",
+#    audit_entry: {
+#      auditee_href: @@deployment,
+#      summary: "execution description: "+to_s($execution_description),
+#      detail: ""
+#    }
+#  )
+  # Must have a value otherwise trouble will occur when trying to tag.
+  # So if user didn't write a description when launching, just set it to the name the user gave the execution.
+  if $execution_description == ""
+    $execution_description = $execution_name
+  end
+  
+end
+
+# Returns the RightScale account number in which the CAT was launched.
+define find_account_number() return $rs_account_number do
+  $cloud_accounts = to_object(first(rs.cloud_accounts.get()))
+  @info = first(rs.cloud_accounts.get())
+  $info_links = @info.links
+  $rs_account_info = select($info_links, { "rel": "account" })[0]
+  $rs_account_href = $rs_account_info["href"]  
+    
+  $rs_account_number = last(split($rs_account_href, "/"))
+  #rs.audit_entries.create(notify: "None", audit_entry: { auditee_href: @deployment, summary: "rs_account_number" , detail: to_s($rs_account_number)})
+end
+
+# Get credential
+# The credentials API uses a partial match filter so if there are other credentials with this string in their name, they will be returned as well.
+# Therefore look through what was returned and find what we really want.
+define get_cred($cred_name) return $cred_value do
+  @cred = rs.credentials.get(filter: "name=="+$cred_name, view: "sensitive") 
+  $cred_hash = to_object(@cred)
+  $cred_value = ""
+  foreach $detail in $cred_hash["details"] do
+    if $detail["name"] == $cred_name
+      $cred_value = $detail["value"]
+    end
+  end
 end
   
