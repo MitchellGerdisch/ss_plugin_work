@@ -232,7 +232,8 @@ define termination_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group,
   delete(@ssh_key)
   delete(@sec_group_rule_http)
   delete(@sec_group_rule_ssh)
-  
+  delete(@sec_group)
+
   # Delete the creds we created for the user-provided DB username and password
   $deployment_number = last(split(@@deployment.href,"/"))
   $credname = "CAT_RDS_USERNAME_"+$deployment_number
