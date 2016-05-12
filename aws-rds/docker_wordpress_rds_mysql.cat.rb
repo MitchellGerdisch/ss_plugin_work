@@ -54,7 +54,7 @@ end
 
 ### Security Group Definitions ###
 resource "sec_group", type: "security_group" do
-  name join(["DockerServerSecGrp-",@@deployment.href])
+  name join(["DockerServerSecGrp-",last(split(@@deployment.href,"/"))])
   description "Docker Server deployment security group."
   cloud 'EC2 us-east-1'
 end
@@ -154,7 +154,7 @@ end
 ########
 # RCL
 ########
-define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec_group_rule_http, @sec_group_rule_ssh, $param_costcenter, $param_db_username, $param_db_password)  return @wordpress_docker_server, @rds, $rds_link, @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh, $wordpress_link do 
+define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec_group_rule_http, @sec_group_rule_ssh, $param_costcenter, $param_db_username, $param_db_password)  return @wordpress_docker_server, @rds, $rds_link, @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh, @sec_group, $wordpress_link do 
 
   call getLaunchInfo() retrieve $execution_name, $userid, $execution_description
   
@@ -164,9 +164,11 @@ define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec
   $rds_object["fields"]["tags"] = $rds_object["fields"]["tags"] + $rds_addl_tags
   @rds = $rds_object
 
-  provision(@ssh_key)
-  provision(@sec_group_rule_http)
-  provision(@sec_group_rule_ssh)
+  concurrent return @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh do
+    provision(@ssh_key)
+    provision(@sec_group_rule_http)
+    provision(@sec_group_rule_ssh)
+  end
 
   concurrent return @rds, @wordpress_docker_server do
     provision(@rds)
@@ -222,16 +224,19 @@ define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec
 
 end
 
-define termination_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec_group_rule_http, @sec_group_rule_ssh)  return @wordpress_docker_server, @rds, @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh do 
+define termination_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec_group_rule_http, @sec_group_rule_ssh)  return @wordpress_docker_server, @rds, @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh, @sec_group do 
 
   concurrent return @rds, @wordpress_docker_server do
     delete(@rds)
     delete(@wordpress_docker_server)
   end
   
-  delete(@ssh_key)
-  delete(@sec_group_rule_http)
-  delete(@sec_group_rule_ssh)
+  concurrent return @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh do
+    delete(@ssh_key)
+    delete(@sec_group_rule_http)
+    delete(@sec_group_rule_ssh)
+  end
+  
   delete(@sec_group)
 
   # Delete the creds we created for the user-provided DB username and password
