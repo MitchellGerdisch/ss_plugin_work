@@ -12,7 +12,9 @@
 
 name 'WordPress Container with External RDS DB Server'
 rs_ca_ver 20131202
-short_description "WordPress Container with External RDS MySQL DB Server"
+short_description "![logo](https://s3.amazonaws.com/rs-pft/cat-logos/docker.png) ![logo](https://s3.amazonaws.com/rs-pft/cat-logos/amazon_rds_glossy.png) 
+
+WordPress Container with External RDS MySQL DB Server"
 
 ### Inputs ####
 parameter "param_db_username" do 
@@ -164,11 +166,10 @@ define launch_handler(@wordpress_docker_server, @rds, @ssh_key, @sec_group, @sec
   $rds_object["fields"]["tags"] = $rds_object["fields"]["tags"] + $rds_addl_tags
   @rds = $rds_object
 
-  concurrent return @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh do
-    provision(@ssh_key)
-    provision(@sec_group_rule_http)
-    provision(@sec_group_rule_ssh)
-  end
+  provision(@ssh_key)
+  provision(@sec_group_rule_http)
+  provision(@sec_group_rule_ssh)
+  provision(@sec_group)
 
   concurrent return @rds, @wordpress_docker_server do
     provision(@rds)
