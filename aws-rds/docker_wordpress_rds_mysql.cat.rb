@@ -403,7 +403,7 @@ end
 define delete_db(@rds) do
   
   # Delete the credentials created for the RDS DB access
-  call utilities.log("deleting rds: "+to_s(@my_rds), to_s(to_object(@my_rds)))
+  call utilities.log("deleting rds: "+to_s(@rds), to_s(to_object(@rds)))
 
   @rds.destroy() # Calls .delete on the API resource
 end
