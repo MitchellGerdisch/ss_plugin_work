@@ -10,11 +10,13 @@
 # Add bits to support creating and deleting the RDS security group.
 
 
-name 'WordPress Container with External RDS DB Server - V1'
+name 'WordPress Container with External RDS DB Server - V2'
 rs_ca_ver 20160622
 short_description "![logo](https://s3.amazonaws.com/rs-pft/cat-logos/docker.png) ![logo](https://s3.amazonaws.com/rs-pft/cat-logos/amazon_rds_glossy.png) 
 
 WordPress Container with External RDS MySQL DB Server"
+
+import "utilities"
 
 ### Inputs ####
 parameter "param_db_username" do 
@@ -158,7 +160,7 @@ end
 ########
 define launch_handler(@wordpress_docker_server, @my_rds, @ssh_key, @sec_group, @sec_group_rule_http, @sec_group_rule_ssh, $param_costcenter, $param_db_username, $param_db_password)  return @wordpress_docker_server, @my_rds, $rds_link, @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh, @sec_group, $wordpress_link do 
 
-  call getLaunchInfo() retrieve $execution_name, $userid, $execution_description
+  call utilities.getLaunchInfo() retrieve $execution_name, $userid, $execution_description
   
   # Set additional tags on RDS
   $rds_addl_tags = ["ExecutionName:"+$execution_name, "Owner:"+$userid, "Description:"+$execution_description]
@@ -166,44 +168,29 @@ define launch_handler(@wordpress_docker_server, @my_rds, @ssh_key, @sec_group, @
   $rds_object["fields"]["tags"] = $rds_object["fields"]["tags"] + $rds_addl_tags
   @my_rds = $rds_object
 
-#  provision(@ssh_key)
-#  provision(@sec_group_rule_http)
-#  provision(@sec_group_rule_ssh)
-#  provision(@sec_group)
+  provision(@ssh_key)
+  provision(@sec_group_rule_http)
+  provision(@sec_group_rule_ssh)
+  provision(@sec_group)
 
-#  concurrent return @rds, @wordpress_docker_server do
+  concurrent return @my_rds, @wordpress_docker_server do
     provision(@my_rds)
-#    provision(@wordpress_docker_server)
-#  end
-  
-  $rds_object = to_object(@my_rds)
-  rs_cm.audit_entries.create(
-    notify: "None",
-    audit_entry: {
-      auditee_href: @@deployment,
-      summary: "rds after provision returns:",
-      detail: to_s($rds_object)
-    }
-  )
+    provision(@wordpress_docker_server)
+  end
+    
+  call utilities.log("rds after provision returns:", to_s(to_object(@my_rds)))
+  call utilities.log("docker host after provision returns:", to_s(to_object(@wordpress_docker_server)))
 
   # configure the docker wordpress environment variables to point at the DB server
-##  $docker_env = "wordpress:\n   WORDPRESS_DB_HOST: " + $rds_object["details"][0]["db_instance_endpoint_address"] + "\n   WORDPRESS_DB_USER: "+ $param_db_username + "\n   WORDPRESS_DB_PASSWORD: " + $param_db_password + "\n   WORDPRESS_DB_NAME: dwp_rds_db"
-  $docker_env = "wordpress:\n   WORDPRESS_DB_HOST: " + to_s(@rds.db_instance_endpoint_address) + "\n   WORDPRESS_DB_USER: "+ $param_db_username + "\n   WORDPRESS_DB_PASSWORD: " + $param_db_password + "\n   WORDPRESS_DB_NAME: dwp_rds_db"
+  $docker_env = "wordpress:\n   WORDPRESS_DB_HOST: " + to_s(@my_rds.db_instance_endpoint_address) + "\n   WORDPRESS_DB_USER: "+ $param_db_username + "\n   WORDPRESS_DB_PASSWORD: " + $param_db_password + "\n   WORDPRESS_DB_NAME: dwp_rds_db"
   $inp = {
     'DOCKER_ENVIRONMENT' => join(["text:", $docker_env])
   } 
   @wordpress_docker_server.current_instance().multi_update_inputs(inputs: $inp) 
   
   # Rerun docker stuff to launch wordpress
-  $script_name = "APP docker services compose"
-  @script = rs_cm.right_scripts.get(filter: join(["name==",$script_name]))
-  $right_script_href=@script.href
-  @tasks = @wordpress_docker_server.current_instance().run_executable(right_script_href: $right_script_href)
-    
-  $script_name = "APP docker services up"
-  @script = rs_cm.right_scripts.get(filter: join(["name==",$script_name]))
-  $right_script_href=@script.href
-  @tasks = @wordpress_docker_server.current_instance().run_executable(right_script_href: $right_script_href)
+  call utilities.run_script_by_name(@wordpress_docker_server, "APP docker services compose")
+  call utilities.run_script_by_name(@wordpress_docker_server, "APP docker services up")
     
   $wordpress_server_address = @wordpress_docker_server.current_instance().public_ip_addresses[0]
   $wordpress_link = join(["http://",$wordpress_server_address,":8080"])
@@ -221,7 +208,7 @@ define launch_handler(@wordpress_docker_server, @my_rds, @ssh_key, @sec_group, @
     
   # Build the link to show the RDS info in CM.
   # NOTE: As seen in other places in this CAT, the assumption is that the RDS is in AWS US-East-1
-  call find_account_number() retrieve $rs_account_number
+  call utilities.find_account_number() retrieve $rs_account_number
   $rds_link = join(['https://my.rightscale.com/acct/',$rs_account_number,'/clouds/1/rds_browser?ui_route=instances/rds-instance-',last(split(@@deployment.href,"/")),'/info'])
 
 end
@@ -289,14 +276,8 @@ define take_rds_snapshot() do
       signature: $signature
     )
     
-    rs_cm.audit_entries.create(
-    notify: "None",
-    audit_entry: {
-      auditee_href: @@deployment,
-      summary: "rds snapshot - http response",
-      detail: to_s($response)
-      }
-    )
+   call utilities.log("rds snapshot - http response", to_s($response))
+
    
 end
 
@@ -318,6 +299,10 @@ end
 #########
 namespace "rds" do
   plugin $rds
+  
+  parameter_values do
+    placeholder "nothing"
+  end
 end
 
 
@@ -335,6 +320,11 @@ plugin "rds" do
 #    no_cert_check true
   end
   
+  parameter "placeholder" do
+    label "placeholder"
+    type "string"
+    description "A required placeholder parameter for now"
+  end
   
   type "instances" do                       # defines resource of type "load_balancer"
     
@@ -377,14 +367,7 @@ end
 # Define the RCL definitions to create and destroy the resource
 define provision_db(@raw_rds) return @my_rds do
   
-  rs_cm.audit_entries.create(
-    notify: "None",
-    audit_entry: {
-      auditee_href: @@deployment,
-      summary: "rds raw object:",
-      detail: to_s(to_object(@raw_rds))
-    }
-  )
+  call utilities.log("rds raw object", to_s(to_object(@raw_rds)))
   
   # Create Credentials so a user can access the RDS DB if they want.
 #  $deployment_number = last(split(@@deployment.href,"/"))
@@ -433,44 +416,17 @@ define provision_db(@raw_rds) return @my_rds do
   }) # Calls .create on the API resource
   
   
-  sleep_until(@my_rds.db_instance_status == "available")
-#  
-#  rs_cm.audit_entries.create(
-#    notify: "None",
-#    audit_entry: {
-#      auditee_href: @@deployment,
-#      summary: "created rds object:",
-#      detail: to_s(to_object(@rds))
-#    }
-#  )
-#  
-#  # Now wait until the RDS is available before returning
-#  $rds_ready = false
-#  while logic_not($rds_ready) do
-#    
-#    @rds = @rds.get()  # refresh the fields for the resource
-##    $db_instance_status = to_object(@rds)["details"][0]["db_instance_status"]
-#    $db_instance_status = @rds.db_instance_status
-#
-#  
-#    rs_cm.audit_entries.create(
-#      notify: "None",
-#      audit_entry: {
-#        auditee_href: @@deployment,
-#        summary: "db_instance_status: "+$db_instance_status,
-#        detail: ""
-#      }
-#    )
-#    
-#    if $db_instance_status != "creating"  # then it's as ready as it's gonna be
-#      $rds_ready = true
-#    else
-#      sleep(30)
-#    end
-#  end
+  call utilities.log("created rds object", to_s(to_object(@my_rds)))
+  
+  @my_rds = @my_rds.get()
+  
+  call utilities.log("getted rds object:", to_s(to_object(@my_rds)))
+  
+  sleep_until(equals?(@my_rds.db_instance_status,"available"))
+
 end
 
-define delete_db(@rds) do
+define delete_db(@my_rds) do
   
   # Delete the credentials created for the RDS DB access
 #  $deployment_number = last(split(@@deployment.href,"/"))
@@ -478,16 +434,9 @@ define delete_db(@rds) do
 #  $rds_password_cred = "RDS_PASSWORD_"+$deployment_number
 #  call deleteCreds([$rds_username_cred, $rds_password_cred])
   
-  rs_cm.audit_entries.create(
-    notify: "None",
-    audit_entry: {
-      auditee_href: @@deployment,
-      summary: "deleting rds: "+to_s(@rds),
-      detail: to_s(to_object(@rds))
-    }
-  )
-  
-  @rds.destroy() # Calls .delete on the API resource
+  call utilities.log("deleting rds: "+to_s(@my_rds), to_s(to_object(@my_rds)))
+
+  @my_rds.destroy() # Calls .delete on the API resource
 end
 
 
@@ -510,23 +459,7 @@ end
 define deleteCreds($credname_array) do
   foreach $cred_name in $credname_array do
     @cred = rs_cm.credentials.get(filter: join(["name==",$cred_name]))
-#    rs_cm.audit_entries.create(
-#      notify: "None",
-#      audit_entry: {
-#        auditee_href: @@deployment,
-#        summary: "cred name: "+$cred_name+" - "+to_s(@cred),
-#        detail: ""
-#      }
-#    )
     if logic_not(empty?(@cred))
-#      rs_cm.audit_entries.create(
-#        notify: "None",
-#        audit_entry: {
-#          auditee_href: @@deployment,
-#          summary: "Deleting cred: "+to_s(@cred),
-#          detail: ""
-#        }
-#      )
       @cred.destroy()
     end
   end
@@ -549,14 +482,6 @@ define getLaunchInfo() return $execution_name, $userid, $execution_description d
     end
   end
   
-#  rs_cm.audit_entries.create(
-#    notify: "None",
-#    audit_entry: {
-#      auditee_href: @@deployment,
-#      summary: "execution description: "+to_s($execution_description),
-#      detail: ""
-#    }
-#  )
   # Must have a value otherwise trouble will occur when trying to tag.
   # So if user didn't write a description when launching, just set it to the name the user gave the execution.
   if $execution_description == ""
@@ -574,7 +499,6 @@ define find_account_number() return $rs_account_number do
   $rs_account_href = $rs_account_info["href"]  
     
   $rs_account_number = last(split($rs_account_href, "/"))
-  #rs_cm.audit_entries.create(notify: "None", audit_entry: { auditee_href: @deployment, summary: "rs_account_number" , detail: to_s($rs_account_number)})
 end
 
 # Get credential

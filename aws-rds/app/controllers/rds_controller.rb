@@ -75,7 +75,8 @@ module V1
           resp_body["db_instance_endpoint_port"] = rds_desc["endpoint"]["port"]
         end
         resp_body["db_instance_status"] = rds_desc["db_instance_status"]
-        resp_body["href"] = "/rds/instances/" + instance_id
+#        resp_body["href"] = "/rds/instances/" + instance_id
+        resp_body["href"] = "/instances/" + instance_id
         resp_body["kind"] = "rds#instances"
 
         response = Praxis::Responses::Ok.new()
@@ -167,7 +168,8 @@ module V1
           
         resp_body["rds_instance_name"] = request.payload.instance_id
         resp_body["rds_db_name"] = request.payload.db_name
-        resp_body["href"] = "/rds/instances/" + request.payload.instance_id
+#        resp_body["href"] = "/rds/instances/" + request.payload.instance_id
+        resp_body["href"] = "/instances/" + request.payload.instance_id
         resp_body["kind"] = "rds#instances"
 
           
