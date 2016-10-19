@@ -369,39 +369,13 @@ define provision_db(@raw_rds) return @my_rds do
   
   call utilities.log("rds raw object", to_s(to_object(@raw_rds)))
   
-  # Create Credentials so a user can access the RDS DB if they want.
-#  $deployment_number = last(split(@@deployment.href,"/"))
-#  $rds_username_cred = "RDS_USERNAME_"+$deployment_number
-#  $rds_password_cred = "RDS_PASSWORD_"+$deployment_number
-#  call createCreds([$rds_username_cred, $rds_password_cred])
-  
-  # Pass the username and password to the plugin service as part of the create
-  # username and password are hardcoded in the docker env stuff above
-#  @cred = rs_cm.credentials.get(filter: "name=="+$rds_username_cred, view: "sensitive") 
-#  $cred_hash = to_object(@cred)
-#  $cred_value = $cred_hash["details"][0]["value"]
-#  $rds_username = $cred_value
-#  
-#  @cred = rs_cm.credentials.get(filter: "name=="+$rds_password_cred, view: "sensitive") 
-#  $cred_hash = to_object(@cred)
-#  $cred_value = $cred_hash["details"][0]["value"]
-#  $rds_password = $cred_value
-  
   # Array up the security groups
   $api_secgroups = []
   foreach $api_secgroup in split(@raw_rds.db_security_groups, ",") do
     $api_secgroups << $api_secgroup
   end
   
-  # Get the AWS creds and send them to the plugin server to use
-  # NOTE: HTTPS is being used to protect the these values.
-# CURRENTLY not sending the creds since we are not using HTTPS
-#  call get_cred("AWS_ACCESS_KEY_ID") retrieve $cred_value
-#  $aws_access_key_id = $cred_value
-#  
-#  call get_cred("AWS_SECRET_ACCESS_KEY") retrieve $cred_value
-#  $aws_secret_access_key = $cred_value
-    
+  # Create the RDS service
   @my_rds = rds.instances.create({
     db_name: @raw_rds.db_name,
     instance_id: @raw_rds.name,
@@ -418,100 +392,18 @@ define provision_db(@raw_rds) return @my_rds do
   
   call utilities.log("created rds object", to_s(to_object(@my_rds)))
   
-  @my_rds = @my_rds.get()
-  
-  call utilities.log("getted rds object:", to_s(to_object(@my_rds)))
+#  @my_rds = @my_rds.get()
+#  
+#  call utilities.log("getted rds object:", to_s(to_object(@my_rds)))
   
   sleep_until(equals?(@my_rds.db_instance_status,"available"))
 
 end
 
-define delete_db(@my_rds) do
+define delete_db(@rds) do
   
   # Delete the credentials created for the RDS DB access
-#  $deployment_number = last(split(@@deployment.href,"/"))
-#  $rds_username_cred = "RDS_USERNAME_"+$deployment_number
-#  $rds_password_cred = "RDS_PASSWORD_"+$deployment_number
-#  call deleteCreds([$rds_username_cred, $rds_password_cred])
-  
   call utilities.log("deleting rds: "+to_s(@my_rds), to_s(to_object(@my_rds)))
 
-  @my_rds.destroy() # Calls .delete on the API resource
+  @rds.destroy() # Calls .delete on the API resource
 end
-
-
-#######
-# Helper Functions
-#######
-# Creates CREDENTIAL objects in Cloud Management for each of the named items in the given array.
-define createCreds($credname_array) do
-  foreach $cred_name in $credname_array do
-    @cred = rs_cm.credentials.get(filter: join(["name==",$cred_name]))
-    if empty?(@cred) 
-      $cred_value = join(split(uuid(), "-"))[0..14] # max of 16 characters for mysql username and we're adding a letter next.
-      $cred_value = "a" + $cred_value # add an alpha to the beginning of the value - just in case.
-      @task=rs_cm.credentials.create({"name":$cred_name, "value": $cred_value})
-    end
-  end
-end
-
-# Deletes CREDENTIAL objects in Cloud Management for each of the named items in the given array.
-define deleteCreds($credname_array) do
-  foreach $cred_name in $credname_array do
-    @cred = rs_cm.credentials.get(filter: join(["name==",$cred_name]))
-    if logic_not(empty?(@cred))
-      @cred.destroy()
-    end
-  end
-end
-
-define getLaunchInfo() return $execution_name, $userid, $execution_description do
-  
-  $execution_name = $name_array = split(@@deployment.name, "-")
-  $name_array_size = size($name_array)
-  $execution_name = join($name_array[0..($name_array_size-2)])
-  
-  $deployment_description_array = lines(@@deployment.description)
-  $userid="tbd"
-  $execution_description="tbd"
-  foreach $entry in $deployment_description_array do
-    if include?($entry, "Author")
-      $userid = split(split(lstrip(split(split($entry, ":")[1], "(")[0]), '[`')[1],'`]')[0]
-    elsif include?($entry, "CloudApp description:")
-      $execution_description = lstrip(split(split($entry, ":")[1], "\"")[0])
-    end
-  end
-  
-  # Must have a value otherwise trouble will occur when trying to tag.
-  # So if user didn't write a description when launching, just set it to the name the user gave the execution.
-  if $execution_description == ""
-    $execution_description = $execution_name
-  end
-  
-end
-
-# Returns the RightScale account number in which the CAT was launched.
-define find_account_number() return $rs_account_number do
-  $cloud_accounts = to_object(first(rs_cm.cloud_accounts.get()))
-  @info = first(rs_cm.cloud_accounts.get())
-  $info_links = @info.links
-  $rs_account_info = select($info_links, { "rel": "account" })[0]
-  $rs_account_href = $rs_account_info["href"]  
-    
-  $rs_account_number = last(split($rs_account_href, "/"))
-end
-
-# Get credential
-# The credentials API uses a partial match filter so if there are other credentials with this string in their name, they will be returned as well.
-# Therefore look through what was returned and find what we really want.
-define get_cred($cred_name) return $cred_value do
-  @cred = rs_cm.credentials.get(filter: "name=="+$cred_name, view: "sensitive") 
-  $cred_hash = to_object(@cred)
-  $cred_value = ""
-  foreach $detail in $cred_hash["details"] do
-    if $detail["name"] == $cred_name
-      $cred_value = $detail["value"]
-    end
-  end
-end
-  
