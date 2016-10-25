@@ -18,7 +18,7 @@ WordPress Container with External RDS MySQL DB Server"
 
 import "utilities"
 
-### Inputs ####
+### INPUTS ####
 parameter "param_db_username" do 
   category "RDS Configuration Options"
   label "RDS DB User Name" 
@@ -56,7 +56,50 @@ parameter "param_costcenter" do
   default 1164
 end
 
-### Security Group Definitions ###
+
+### RESOURCE DELCARATIONS ###
+
+### DOCKER HOST ###
+resource 'wordpress_docker_server', type: 'server' do
+  name join(["DockerHost-", last(split(@@deployment.href,"/"))])
+  cloud 'EC2 us-east-1'
+  ssh_key_href @ssh_key
+  security_group_hrefs @sec_group
+  server_template find('Docker Technology Demo', revision: 2)
+  inputs do {
+    'COLLECTD_SERVER' => 'env:RS_SKETCHY',
+    'DOCKER_ENVIRONMENT' => 'text:wordpress:
+  WORDPRESS_DB_HOST: TBD 
+  WORDPRESS_DB_USER: TBD
+  WORDPRESS_DB_PASSWORD: TBD
+  WORDPRESS_DB_NAME: dwp_rds_db',
+    'DOCKER_PROJECT' => 'text:rightscale',
+    'DOCKER_SERVICES' => 'text:wordpress:
+  image: wordpress
+  ports:
+    - 8080:80',
+    'HOSTNAME' => 'env:RS_SERVER_NAME',
+    'NTP_SERVERS' => 'array:["text:time.rightscale.com","text:ec2-us-east.time.rightscale.com","text:ec2-us-west.time.rightscale.com"]',
+    'RS_INSTANCE_UUID' => 'env:RS_INSTANCE_UUID',
+    'SWAP_FILE' => 'text:/mnt/ephemeral/swapfile',
+    'SWAP_SIZE' => 'text:1',
+  } end
+end
+
+### RDS INSTANCE ###
+resource "my_rds", type: "rds.instances" do
+  name join(['rds-instance-',last(split(@@deployment.href,"/"))])
+  db_name  "dwp_rds_db"
+  instance_class "db.m1.small"
+  engine "MySQL"
+  allocated_storage $param_db_size 
+  db_security_groups "rds-ss-secgroup"  # CURRENTLY THIS NEEDS TO BE PRECONFIGURED AND ALLOW 0.0.0.0/0 ACCESS
+  master_username $param_db_username
+  master_user_password $param_db_password
+  tags join(["BudgetCode:",$param_costcenter])
+end
+
+### SECURITY GROUPS ###
 resource "sec_group", type: "security_group" do
   name join(["DockerServerSecGrp-",last(split(@@deployment.href,"/"))])
   description "Docker Server deployment security group."
@@ -88,52 +131,14 @@ resource "sec_group_rule_ssh", type: "security_group_rule" do
   } end
 end  
 
-
-### SSH Key ###
+### SSH KEY ###
 resource "ssh_key", type: "ssh_key" do
   name join(["sshkey_", last(split(@@deployment.href,"/"))])
   cloud 'EC2 us-east-1'
 end
 
-resource 'wordpress_docker_server', type: 'server' do
-  name join(["DockerHost-", last(split(@@deployment.href,"/"))])
-  cloud 'EC2 us-east-1'
-  ssh_key_href @ssh_key
-  security_group_hrefs @sec_group
-  server_template find('Docker Technology Demo', revision: 2)
-  inputs do {
-    'COLLECTD_SERVER' => 'env:RS_SKETCHY',
-    'DOCKER_ENVIRONMENT' => 'text:wordpress:
-  WORDPRESS_DB_HOST: TBD 
-  WORDPRESS_DB_USER: TBD
-  WORDPRESS_DB_PASSWORD: TBD
-  WORDPRESS_DB_NAME: dwp_rds_db',
-    'DOCKER_PROJECT' => 'text:rightscale',
-    'DOCKER_SERVICES' => 'text:wordpress:
-  image: wordpress
-  ports:
-    - 8080:80',
-    'HOSTNAME' => 'env:RS_SERVER_NAME',
-    'NTP_SERVERS' => 'array:["text:time.rightscale.com","text:ec2-us-east.time.rightscale.com","text:ec2-us-west.time.rightscale.com"]',
-    'RS_INSTANCE_UUID' => 'env:RS_INSTANCE_UUID',
-    'SWAP_FILE' => 'text:/mnt/ephemeral/swapfile',
-    'SWAP_SIZE' => 'text:1',
-  } end
-end
 
-resource "my_rds", type: "rds.instances" do
-  name join(['rds-instance-',last(split(@@deployment.href,"/"))])
-  db_name  "dwp_rds_db"
-  instance_class "db.m1.small"
-  engine "MySQL"
-  allocated_storage $param_db_size 
-  db_security_groups "rds-ss-secgroup"  # CURRENTLY THIS NEEDS TO BE PRECONFIGURED AND ALLOW 0.0.0.0/0 ACCESS
-  master_username $param_db_username
-  master_user_password $param_db_password
-  tags join(["BudgetCode:",$param_costcenter])
-end
-
-# Operations
+### OPERATIONS ###
 operation "launch" do
     description 'Launch the application' 
     definition 'launch_handler' 
@@ -158,6 +163,8 @@ end
 ########
 # RCL
 ########
+
+### launch DEFINITION ###
 define launch_handler(@wordpress_docker_server, @my_rds, @ssh_key, @sec_group, @sec_group_rule_http, @sec_group_rule_ssh, $param_costcenter, $param_db_username, $param_db_password)  return @wordpress_docker_server, @my_rds, $rds_link, @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh, @sec_group, $wordpress_link do 
 
   call utilities.getLaunchInfo() retrieve $execution_name, $userid, $execution_description
@@ -213,6 +220,7 @@ define launch_handler(@wordpress_docker_server, @my_rds, @ssh_key, @sec_group, @
 
 end
 
+### terminate DEFINITION ###
 define termination_handler(@wordpress_docker_server, @my_rds, @ssh_key, @sec_group, @sec_group_rule_http, @sec_group_rule_ssh)  return @wordpress_docker_server, @my_rds, @ssh_key, @sec_group_rule_http, @sec_group_rule_ssh, @sec_group do 
 
   concurrent return @my_rds, @wordpress_docker_server do
@@ -239,6 +247,7 @@ define termination_handler(@wordpress_docker_server, @my_rds, @ssh_key, @sec_gro
 
 end
 
+### POST-LAUNCH RDS SNAPSHOT ACTION ###
 define take_rds_snapshot() do
   
   # Get the AWS creds and send them to the plugin server to use
@@ -297,6 +306,8 @@ end
 #########
 # AWS RDS Service
 #########
+
+### NAMESPACE INSTANTIATION ###
 namespace "rds" do
   plugin $rds
   
@@ -306,18 +317,16 @@ namespace "rds" do
 end
 
 
-
+### PLUGIN DECLARATION ###
 plugin "rds" do
   endpoint do
     default_scheme "http"
     default_host "184.73.90.169:8080"         # HTTP endpoint presenting an API defined by self-service to act on resources
-#    default_host "184.73.90.169:8443"         # HTTP endpoint presenting an API defined by self-service to act on resources
     path "/rds"           # path prefix for all resources, RightScale account_id substituted in for multi-tenancy
     headers do {
       "X-Api-Version" => "1.0",
       "X-Api-Shared-Secret" => "12345"  # Shared secret set up on the Praxis App server providing the RDS plugin service
     } end
-#    no_cert_check true
   end
   
   parameter "placeholder" do
@@ -327,9 +336,7 @@ plugin "rds" do
   end
   
   type "instances" do                       # defines resource of type "load_balancer"
-    
-#    href_templates "/instances/:db_instance_name:"
-    
+        
     provision "provision_db"         # name of RCL definition to use to provision the resource
     
     delete "delete_db"               # name of RCL definition to use to delete the resource
@@ -364,7 +371,8 @@ plugin "rds" do
   
 end
 
-# Define the RCL definitions to create and destroy the resource
+
+### PROVISION DEFINITION ####
 define provision_db(@raw_rds) return @my_rds do
   
   call utilities.log("rds raw object", to_s(to_object(@raw_rds)))
@@ -391,15 +399,12 @@ define provision_db(@raw_rds) return @my_rds do
   
   
   call utilities.log("created rds object", to_s(to_object(@my_rds)))
-  
-#  @my_rds = @my_rds.get()
-#  
-#  call utilities.log("getted rds object:", to_s(to_object(@my_rds)))
-  
+
   sleep_until(equals?(@my_rds.db_instance_status,"available"))
 
 end
 
+### DELETE DEFINITION ####
 define delete_db(@rds) do
   
   # Delete the credentials created for the RDS DB access
