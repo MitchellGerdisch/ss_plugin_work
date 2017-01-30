@@ -1,4 +1,3 @@
-# This version of the CAT represents Cap1 requirements based on the CFT they provided.
 
 name "Elastic Load Balancer"
 rs_ca_ver 20131202
@@ -43,7 +42,7 @@ parameter "param_elb_owner" do
   label "Owner Contact Name"
   description "Who is the contact for or team who created the resource (EID or email)."
   constraint_description "Must be EID or email address."
-  allowed_pattern "(^[a-zA-Z0-9\.\-_]+@capitalone\.com$)|(^[a-z]{3}[0-9]+$)"
+  allowed_pattern "(^[a-zA-Z0-9\.\-_]+@example\.com$)|(^[a-z]{3}[0-9]+$)"
   default "mrg000"
 end
 
@@ -92,9 +91,9 @@ end
 # TEST VERSION
 mapping "map_config" do {
   "CMDBApplicationService" => {
-     "test"=> "ASVEVENTSCHEDULING",
-     "preprod"=> "ASVEVENTSCHEDULING",
-     "prod"=> "ASVEVENTSCHEDULING"
+     "test"=> "EVENTSCHEDULING",
+     "preprod"=> "EVENTSCHEDULING",
+     "prod"=> "EVENTSCHEDULING"
    },
    "CMDBEnvironment"=> {
      "test"=> "ENVNPEVENTSCHEDULING",
@@ -110,14 +109,14 @@ mapping "map_config" do {
      "test"=> "sg-66592b00,sg-0b592b6d",
    },
    "SNSAppNotifyTopic"=> {
-     "test"=> "arn:aws:sns:us-east-1:084220657940:esa-notify-nonprod",
-     "preprod"=> "arn:aws:sns:us-east-1:084220657940:esa-notify-nonprod",
-     "prod"=> "arn:aws:sns:us-east-1:884541871395:esa-notify-prod"
+     "test"=> "arn:aws:sns:us-east-1:0842206540:esa-notify-nonprod",
+     "preprod"=> "arn:aws:sns:us-east-1:0842206540:esa-notify-nonprod",
+     "prod"=> "arn:aws:sns:us-east-1:8845418795:esa-notify-prod"
    },
    "SNSOpsNotifyTopic"=> {
-     "test"=> "arn:aws:sns:us-east-1:084220657940:Enterprise_Monitoring_SNS_Retail",
-     "preprod"=> "arn:aws:sns:us-east-1:084220657940:Enterprise_Monitoring_SNS_Retail",
-     "prod"=> "arn:aws:sns:us-east-1:884541871395:Enterprise_Monitoring_SNS_Retailbank"
+     "test"=> "arn:aws:sns:us-east-1:0842206540:Enterprise_Monitoring_1",
+     "preprod"=> "arn:aws:sns:us-east-1:0842206940:Enterprise_Monitoring_1",
+     "prod"=> "arn:aws:sns:us-east-1:8845418795:Enterprise_Monitoring_2"
    },
    "Subnets"=> {
      "test"=> "subnet-e237ce94,subnet-1c564545",
