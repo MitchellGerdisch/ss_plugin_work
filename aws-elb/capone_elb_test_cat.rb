@@ -1,4 +1,3 @@
-# This version of the CAT represents Cap1 requirements based on the CFT they provided.
 
 name "Elastic Load Balancer"
 rs_ca_ver 20131202
@@ -43,7 +42,7 @@ parameter "param_elb_owner" do
   label "Owner Contact Name"
   description "Who is the contact for or team who created the resource (EID or email)."
   constraint_description "Must be EID or email address."
-  allowed_pattern "(^[a-zA-Z0-9\.\-_]+@capitalone\.com$)|(^[a-z]{3}[0-9]+$)"
+  allowed_pattern "(^[a-zA-Z0-9\.\-_]+@example\.com$)|(^[a-z]{3}[0-9]+$)"
   default "mrg000"
 end
 
