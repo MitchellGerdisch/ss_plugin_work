@@ -49,44 +49,6 @@ end
 #########
 # Mappings
 #########
-#mapping "map_config" do {
-#  # A straight port of the mapping in the provided CFT
-#  "CMDBApplicationService" => {
-#     "test"=> "ASVEVENTSCHEDULING",
-#     "preprod"=> "ASVEVENTSCHEDULING",
-#     "prod"=> "ASVEVENTSCHEDULING"
-#   },
-#   "CMDBEnvironment"=> {
-#     "test"=> "ENVNPEVENTSCHEDULING",
-#     "preprod"=> "ENVNPEVENTSCHEDULING",
-#     "prod"=> "ENVPREVENTSCHEDULING"
-#   },
-#   "ELBScheme"=> {
-#     "test"=> "internal",
-#     "preprod"=> "internal",
-#     "prod"=> "internal"
-#   },
-#   "SecurityGroups"=> {
-#     "test"=> "sg-e2cf9086",
-#     "preprod"=> "sg-37ce9153",
-#     "prod"=> "sg-7fdfb41b"
-#   },
-#   "SNSAppNotifyTopic"=> {
-#     "test"=> "arn:aws:sns:us-east-1:084220657940:esa-notify-nonprod",
-#     "preprod"=> "arn:aws:sns:us-east-1:084220657940:esa-notify-nonprod",
-#     "prod"=> "arn:aws:sns:us-east-1:884541871395:esa-notify-prod"
-#   },
-#   "SNSOpsNotifyTopic"=> {
-#     "test"=> "arn:aws:sns:us-east-1:084220657940:Enterprise_Monitoring_SNS_Retail",
-#     "preprod"=> "arn:aws:sns:us-east-1:084220657940:Enterprise_Monitoring_SNS_Retail",
-#     "prod"=> "arn:aws:sns:us-east-1:884541871395:Enterprise_Monitoring_SNS_Retailbank"
-#   },
-#   "Subnets"=> {
-#     "test"=> "subnet-05b9c75c,subnet-a9660582",
-#     "preprod"=> "subnet-bbb895e2,subnet-b3aaf998,subnet-7948420e",
-#     "prod"=> "subnet-c82578e3,subnet-bc3124cb,subnet-4e517e17"
-#   }
-#} end
 
 # TEST VERSION
 mapping "map_config" do {
@@ -109,14 +71,14 @@ mapping "map_config" do {
      "test"=> "sg-66592b00,sg-0b592b6d",
    },
    "SNSAppNotifyTopic"=> {
-     "test"=> "arn:aws:sns:us-east-1:084220657940:esa-notify-nonprod",
-     "preprod"=> "arn:aws:sns:us-east-1:084220657940:esa-notify-nonprod",
-     "prod"=> "arn:aws:sns:us-east-1:884541871395:esa-notify-prod"
+     "test"=> "arn:aws:sns:us-east-1:0842206540:esa-notify-nonprod",
+     "preprod"=> "arn:aws:sns:us-east-1:0842206540:esa-notify-nonprod",
+     "prod"=> "arn:aws:sns:us-east-1:8845418795:esa-notify-prod"
    },
    "SNSOpsNotifyTopic"=> {
-     "test"=> "arn:aws:sns:us-east-1:084220657940:Enterprise_Monitoring_SNS_Retail",
-     "preprod"=> "arn:aws:sns:us-east-1:084220657940:Enterprise_Monitoring_SNS_Retail",
-     "prod"=> "arn:aws:sns:us-east-1:884541871395:Enterprise_Monitoring_SNS_Retailbank"
+     "test"=> "arn:aws:sns:us-east-1:0842206570:Enterprise_Monitoring_SNS_Retail",
+     "preprod"=> "arn:aws:sns:us-east-1:0842206570:Enterprise_Monitoring_SNS_Retail",
+     "prod"=> "arn:aws:sns:us-east-1:8845418715:Enterprise_Monitoring_SNS_Retailbank"
    },
    "Subnets"=> {
      "test"=> "subnet-e237ce94,subnet-1c564545",
