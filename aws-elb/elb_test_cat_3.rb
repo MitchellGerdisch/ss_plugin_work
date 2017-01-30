@@ -1,4 +1,3 @@
-# This version of the CAT represents Cap1 requirements based on the CFT they provided.
 
 name "Elastic Load Balancer"
 rs_ca_ver 20131202
@@ -11,21 +10,13 @@ long_description "Create/Delete/List AWS ELBs via an SS Plugin Praxis App server
 #########
 
 # ELB name is constructed from app and env names
-#parameter "elb_name" do
-#  category "ELB"
-#  type "string"
-#  label "Application Name"
-#  description "What app will this resource be for?"
-#  constraint_description "The ELB name must be unique within your set of load balancers for the region, must have a maximum of 32 characters, must contain only alphanumeric characters or hyphens, and cannot begin or end with a hyphen."
-#  allowed_pattern "(?=[a-zA-Z0-9\-]{1,32}$)^[a-zA-Z0-9]+(\-[a-zA-Z0-9]+)*$"
-#end
-
 parameter "param_elb_appname" do
   category "ELB"
   type "string"
   label "Application Name"
   description "What app will this resource be for?"
-  default "mitchtest"
+  default "transend"
+  # TO-DO: Add allowed_pattern that only allows letters, numbers or dashes since that's the requirement for ELB names
 end
 
 parameter "param_elb_envtype" do
@@ -43,8 +34,8 @@ parameter "param_elb_owner" do
   label "Owner Contact Name"
   description "Who is the contact for or team who created the resource (EID or email)."
   constraint_description "Must be EID or email address."
-  allowed_pattern "(^[a-zA-Z0-9\.\-_]+@capitalone\.com$)|(^[a-z]{3}[0-9]+$)"
-  default "mrg000"
+  allowed_pattern "(^[a-zA-Z0-9\.\-_]+@example\.com$)|(^[a-z]{3}[0-9]+$)"
+#  default "mrg000"
 end
 
 #########
@@ -52,49 +43,11 @@ end
 #########
 #mapping "map_config" do {
 #  # A straight port of the mapping in the provided CFT
-#  "CMDBApplicationService" => {
-#     "test"=> "ASVEVENTSCHEDULING",
-#     "preprod"=> "ASVEVENTSCHEDULING",
-#     "prod"=> "ASVEVENTSCHEDULING"
-#   },
-#   "CMDBEnvironment"=> {
-#     "test"=> "ENVNPEVENTSCHEDULING",
-#     "preprod"=> "ENVNPEVENTSCHEDULING",
-#     "prod"=> "ENVPREVENTSCHEDULING"
-#   },
-#   "ELBScheme"=> {
-#     "test"=> "internal",
-#     "preprod"=> "internal",
-#     "prod"=> "internal"
-#   },
-#   "SecurityGroups"=> {
-#     "test"=> "sg-e2cf9086",
-#     "preprod"=> "sg-37ce9153",
-#     "prod"=> "sg-7fdfb41b"
-#   },
-#   "SNSAppNotifyTopic"=> {
-#     "test"=> "arn:aws:sns:us-east-1:084220657940:esa-notify-nonprod",
-#     "preprod"=> "arn:aws:sns:us-east-1:084220657940:esa-notify-nonprod",
-#     "prod"=> "arn:aws:sns:us-east-1:884541871395:esa-notify-prod"
-#   },
-#   "SNSOpsNotifyTopic"=> {
-#     "test"=> "arn:aws:sns:us-east-1:084220657940:Enterprise_Monitoring_SNS_Retail",
-#     "preprod"=> "arn:aws:sns:us-east-1:084220657940:Enterprise_Monitoring_SNS_Retail",
-#     "prod"=> "arn:aws:sns:us-east-1:884541871395:Enterprise_Monitoring_SNS_Retailbank"
-#   },
-#   "Subnets"=> {
-#     "test"=> "subnet-05b9c75c,subnet-a9660582",
-#     "preprod"=> "subnet-bbb895e2,subnet-b3aaf998,subnet-7948420e",
-#     "prod"=> "subnet-c82578e3,subnet-bc3124cb,subnet-4e517e17"
-#   }
-#} end
-
-# TEST VERSION
 mapping "map_config" do {
   "CMDBApplicationService" => {
-     "test"=> "ASVEVENTSCHEDULING",
-     "preprod"=> "ASVEVENTSCHEDULING",
-     "prod"=> "ASVEVENTSCHEDULING"
+     "test"=> "EVENTSCHEDULING",
+     "preprod"=> "EVENTSCHEDULING",
+     "prod"=> "EVENTSCHEDULING"
    },
    "CMDBEnvironment"=> {
      "test"=> "ENVNPEVENTSCHEDULING",
@@ -107,22 +60,28 @@ mapping "map_config" do {
      "prod"=> "internal"
    },
    "SecurityGroups"=> {
-     "test"=> "sg-66592b00,sg-0b592b6d",
+     "test"=> "sg-e2cf9086,sg-09cf906d,sg-373e6053,sg-2bcf904f",
+     "preprod"=> "sg-37ce9153",
+     "prod"=> "sg-7fdfb41b"
    },
    "SNSAppNotifyTopic"=> {
-     "test"=> "arn:aws:sns:us-east-1:084220657940:esa-notify-nonprod",
-     "preprod"=> "arn:aws:sns:us-east-1:084220657940:esa-notify-nonprod",
-     "prod"=> "arn:aws:sns:us-east-1:884541871395:esa-notify-prod"
+     "test"=> "arn:aws:sns:us-east-1:0842206579:esa-notify-nonprod",
+     "preprod"=> "arn:aws:sns:us-east-1:0842206579:esa-notify-nonprod",
+     "prod"=> "arn:aws:sns:us-east-1:8845418713:esa-notify-prod"
    },
    "SNSOpsNotifyTopic"=> {
-     "test"=> "arn:aws:sns:us-east-1:084220657940:Enterprise_Monitoring_SNS_Retail",
-     "preprod"=> "arn:aws:sns:us-east-1:084220657940:Enterprise_Monitoring_SNS_Retail",
-     "prod"=> "arn:aws:sns:us-east-1:884541871395:Enterprise_Monitoring_SNS_Retailbank"
+     "test"=> "arn:aws:sns:us-east-1:0842206579:Enterprise_Monitoring_SNS_Retail",
+     "preprod"=> "arn:aws:sns:us-east-1:0842206579:Enterprise_Monitoring_SNS_Retail",
+     "prod"=> "arn:aws:sns:us-east-1:8845418713:Enterprise_Monitoring_SNS_Retailbank"
    },
    "Subnets"=> {
-     "test"=> "subnet-e237ce94,subnet-1c564545",
+     "test"=> "subnet-05b9c75d,subnet-a9660592",
+     "preprod"=> "subnet-bbb895e2,subnet-b3aaf998,subnet-7948420e",
+     "prod"=> "subnet-c82578e3,subnet-bc3124cb,subnet-4e517e17"
    }
 } end
+
+
 
 #########
 # Resources
@@ -148,29 +107,80 @@ resource "elb", type: "elb.load_balancer" do
   name  join([$param_elb_appname,"-",$param_elb_envtype,"-web-elb"])
   subnets  map($map_config, "Subnets", $param_elb_envtype)
   security_groups map($map_config, "SecurityGroups", $param_elb_envtype)
-  healthcheck_target  "HTTP:8080/index.html"
-  healthcheck_interval "33"
-  healthcheck_timeout "7"
-  healthcheck_unhealthy_threshold "6"
-  healthcheck_healthy_threshold "4"
-  connection_draining_timeout "122" # if null then connection_draining_policy is disabled
-  connection_idle_timeout "93"
+  healthcheck_target  "HTTP:80/index.html"
+  healthcheck_interval "30"
+  healthcheck_timeout "5"
+  healthcheck_unhealthy_threshold "2"
+  healthcheck_healthy_threshold "10"
+  connection_draining_timeout "120" # if null then connection_draining_policy is disabled
+  connection_idle_timeout "90"
   cross_zone  "true"
   scheme  "internal"
+  lb_stickiness_policy_expiration_period "1200"
   listeners do [ # Must have at least one listener defined.
     {
-      "listener_name" => "elb_listener_http8080_http8080",
+      "listener_name" => "elb_listener_http442_http442",
       "lb_protocol" => "HTTP",
-      "lb_port" => "8080",
+      "lb_port" => "442",
       "instance_protocol" => "HTTP",
-      "instance_port" => "8080"
+      "instance_port" => "442",
+      "sticky" => "true"
     },
+    {
+      "listener_name" => "elb_listener_http443_http443",
+      "lb_protocol" => "HTTP",
+      "lb_port" => "443",
+      "instance_protocol" => "HTTP",
+      "instance_port" => "443",
+      "sticky" => "true"
+    },
+    {
+      "listener_name" => "elb_listener_tcp5005_tcp5005",
+      "lb_protocol" => "TCP",
+      "lb_port" => "5005",
+      "instance_protocol" => "TCP",
+      "instance_port" => "5005",
+      "sticky" => "false"
+    },
+    {
+      "listener_name" => "elb_listener_tcp5006_tcp5006",
+      "lb_protocol" => "TCP",
+      "lb_port" => "5006",
+      "instance_protocol" => "TCP",
+      "instance_port" => "5006",
+      "sticky" => "false"
+    },
+    {
+      "listener_name" => "elb_listener_tcp5007_tcp5007",
+      "lb_protocol" => "TCP",
+      "lb_port" => "5007",
+      "instance_protocol" => "TCP",
+      "instance_port" => "5007",
+      "sticky" => "false"
+    },
+    {
+       "listener_name" => "elb_listener_http82_http82",
+       "lb_protocol" => "HTTP",
+       "lb_port" => "82",
+       "instance_protocol" => "HTTP",
+       "instance_port" => "82",
+       "sticky" => "true"
+     },
+    {
+       "listener_name" => "elb_listener_http84_http84",
+       "lb_protocol" => "HTTP",
+       "lb_port" => "84",
+       "instance_protocol" => "HTTP",
+       "instance_port" => "84",
+       "sticky" => "true"
+     },
     {
       "listener_name" => "elb_listener_http80_http80",
       "lb_protocol" => "HTTP",
       "lb_port" => "80",
       "instance_protocol" => "HTTP",
-      "instance_port" => "80"
+      "instance_port" => "80",
+      "sticky" => "true"
     }
   ] end
   tags join(["ASV:",map($map_config, "CMDBApplicationService", $param_elb_envtype)]), join(["CMDBEnvironment:",map($map_config, "CMDBEnvironment", $param_elb_envtype)]), join(["OwnerContact:",$param_elb_owner]), join(["SNSTopicARN:",map($map_config, "SNSAppNotifyTopic", $param_elb_envtype)])
@@ -234,6 +244,9 @@ namespace "elb" do
       field "scheme" do
         type "string"
       end
+      field "lb_stickiness_policy_expiration_period" do
+        type "string"
+      end
       field "listeners" do
         type "composite"
         required true
@@ -263,7 +276,8 @@ define provision_lb(@raw_elb) return @elb do
       lb_protocol: $listener["lb_protocol"],
       lb_port: $listener["lb_port"],
       instance_protocol: $listener["instance_protocol"],
-      instance_port: $listener["instance_port"]
+      instance_port: $listener["instance_port"],
+      sticky: $listener["sticky"]
     }
     $api_listeners << $api_listener
   end
@@ -283,6 +297,12 @@ define provision_lb(@raw_elb) return @elb do
     "timeout": @raw_elb.healthcheck_timeout,
     "unhealthy_threshold": @raw_elb.healthcheck_unhealthy_threshold,
     "healthy_threshold": @raw_elb.healthcheck_healthy_threshold
+  }
+  
+  $api_stickiness = {
+    "stickiness_type": "lb_cookie",
+    "lb_cookie_expiration": @raw_elb.lb_stickiness_policy_expiration_period,
+    "app_cookie_name": null
   }
     
   rs.audit_entries.create(
@@ -347,6 +367,7 @@ define provision_lb(@raw_elb) return @elb do
     name: @raw_elb.name,
     listeners: $api_listeners,
     healthcheck: $api_healthcheck,
+    stickiness: $api_stickiness,
     subnets: $api_subnets,
     secgroups: $api_secgroups,
     connection_draining_timeout: @raw_elb.connection_draining_timeout,
